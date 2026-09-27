@@ -27,8 +27,7 @@ use UnitEnum;
  *
  * قیمت در فایل به ریال است، همان واحد لیست قیمت بازرگانی، و در سبد به تومان ذخیره و نشان داده می شود.
  * ستون قیمت می تواند فرمول باشد (مثلا VLOOKUP از لیست قیمت بازرگانی)؛ عددی که اکسل برای آن حساب
- * کرده خوانده می شود. قیمتی که بیش از پنج برابر قیمت فعلی (یا کمتر از یک پنجم آن) باشد کل فایل را رد
- * می کند؛ این همان اشتباه ریال و تومان است.
+ * کرده خوانده می شود.
  */
 class OnlineStoreRoutines extends Page
 {
@@ -38,9 +37,6 @@ class OnlineStoreRoutines extends Page
 
     /** یک تومان = ده ریال */
     private const RIAL_PER_TOMAN = 10;
-
-    /** قیمت جدیدی که این اندازه بزرگ تر یا کوچک تر از قیمت فعلی باشد، به احتمال زیاد واحدش اشتباه است */
-    private const MAX_PRICE_CHANGE = 5;
 
     /** آخرین فایل ایمپورت‌شده روی دیسک local (storage/app/private)؛ هر ایمپورت موفق روی قبلی نوشته می‌شود. */
     public const LAST_IMPORT_PATH = 'price-imports/last-prices.xlsx';
@@ -216,7 +212,7 @@ class OnlineStoreRoutines extends Page
      */
     private function parsePrices(array $rows): array
     {
-        $currentPrices = Product::pluck('price', 'id');
+        $productIds = Product::pluck('id')->flip();
         $prices = [];
         $skippedRows = [];
         $errors = [];
@@ -245,13 +241,10 @@ class OnlineStoreRoutines extends Page
                 $errors[] = $label.'فرمول ستون چهارم عددی ندارد؛ فایل را در اکسل باز کنید تا قیمت ها حساب شوند و دوباره ذخیره کنید.';
             } elseif ($price === null || $price <= 0) {
                 $errors[] = $label.'قیمت در ستون چهارم باید یک عدد صحیح بیشتر از صفر باشد.';
-            } elseif (! $currentPrices->has($id)) {
+            } elseif (! $productIds->has($id)) {
                 $skippedRows[] = $number;
             } elseif (isset($prices[$id])) {
                 $errors[] = $label.'این کالا در فایل تکراری است.';
-            } elseif ($this->isFarOff($price, (int) $currentPrices[$id])) {
-                $errors[] = $label.'قیمت '.$this->money($rial).' ریال ('.$this->money($price).' تومان) با قیمت فعلی '
-                    .$this->money((int) $currentPrices[$id]).' تومان خیلی فرق دارد؛ قیمت ستون چهارم باید به ریال باشد.';
             } else {
                 $prices[$id] = $price;
             }
@@ -285,18 +278,6 @@ class OnlineStoreRoutines extends Page
         $value = str_replace([',', '٬', '،', ' '], '', PersianHelper::toEnglishDigits(trim($value)));
 
         return ctype_digit($value) ? (int) $value : null;
-    }
-
-    /** بیش از MAX_PRICE_CHANGE برابر قیمت فعلی یا کمتر از سهم آن؛ کالایی که هنوز قیمت ندارد هر قیمتی می گیرد */
-    private function isFarOff(int $price, int $current): bool
-    {
-        return $current > 0
-            && ($price > $current * self::MAX_PRICE_CHANGE || $price * self::MAX_PRICE_CHANGE < $current);
-    }
-
-    private function money(int $amount): string
-    {
-        return PersianHelper::toPersianDigits(number_format($amount));
     }
 
     private function isBlank(mixed $value): bool

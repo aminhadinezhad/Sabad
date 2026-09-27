@@ -320,35 +320,22 @@ class OnlineStoreRoutinesTest extends TestCase
         $this->assertSame(5934500, (int) $rice->fresh()->price);
     }
 
-    public function test_a_price_in_the_wrong_unit_rejects_the_file(): void
+    public function test_any_price_goes_through_however_far_from_the_current_one(): void
     {
         $this->actingAs($this->admin());
         $sugar = $this->product('شکر صدیق', 105500);
         $oil = $this->product('روغن', 686400);
-        $new = $this->product('کالای بدون قیمت', 0);
-        $rice = $this->product('برنج هاشمی', 150000);
 
         Livewire::test(OnlineStoreRoutines::class)
             ->set('excelFile', $this->excel([
-                // typed in tomans: a tenth of the price
                 [$sugar->id, 'ندارد', 'شکر صدیق', 105500],
-                // rials of rials: ten times the price
                 [$oil->id, 'ندارد', 'روغن', 68640000],
-                // a product with no price yet takes any price
-                [$new->id, 'ندارد', 'کالای بدون قیمت', 2000000],
-                // a real change within five times goes through (once the others are fixed)
-                [$rice->id, 'ندارد', 'برنج هاشمی', 1900000],
             ]))
             ->call('importPrices')
-            ->assertSet('importErrors', [
-                'سطر ۲: قیمت ۱۰۵,۵۰۰ ریال (۱۰,۵۵۰ تومان) با قیمت فعلی ۱۰۵,۵۰۰ تومان خیلی فرق دارد؛ قیمت ستون چهارم باید به ریال باشد.',
-                'سطر ۳: قیمت ۶۸,۶۴۰,۰۰۰ ریال (۶,۸۶۴,۰۰۰ تومان) با قیمت فعلی ۶۸۶,۴۰۰ تومان خیلی فرق دارد؛ قیمت ستون چهارم باید به ریال باشد.',
-            ])
-            ->assertNotified('هیچ قیمتی تغییر نکرد');
+            ->assertSet('importErrors', []);
 
-        // one bad row changes nothing at all
-        $this->assertSame(105500, (int) $sugar->fresh()->price);
-        $this->assertSame(0, (int) $new->fresh()->price);
-        $this->assertSame(150000, (int) $rice->fresh()->price);
+        // the file is read as rials, whatever the size of the change
+        $this->assertSame(10550, (int) $sugar->fresh()->price);
+        $this->assertSame(6864000, (int) $oil->fresh()->price);
     }
 }
