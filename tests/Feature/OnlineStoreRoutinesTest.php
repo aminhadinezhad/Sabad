@@ -106,8 +106,9 @@ class OnlineStoreRoutinesTest extends TestCase
         $reader->close();
 
         $this->assertSame(OnlineStoreRoutines::HEADINGS, $rows[0]);
-        $this->assertEquals([$rice->id, 'ندارد', 'برنج هاشمی', 150000], $rows[1]);
-        $this->assertEquals([$beans->id, 'ندارد', 'لوبیا قرمز', 90000], $rows[2]);
+        // in rials, the unit of the commerce team's price list
+        $this->assertEquals([$rice->id, 'ندارد', 'برنج هاشمی', 1500000], $rows[1]);
+        $this->assertEquals([$beans->id, 'ندارد', 'لوبیا قرمز', 900000], $rows[2]);
     }
 
     public function test_import_updates_prices_from_fourth_column(): void
@@ -119,9 +120,9 @@ class OnlineStoreRoutinesTest extends TestCase
 
         Livewire::test(OnlineStoreRoutines::class)
             ->set('excelFile', $this->excel([
-                [$rice->id, 'ندارد', 'برنج هاشمی', 175000],
-                [$beans->id, 'ندارد', 'لوبیا قرمز', '۹۵,۰۰۰'],
-                [$lentils->id, 'ندارد', 'عدس', 70000],
+                [$rice->id, 'ندارد', 'برنج هاشمی', 1750000],
+                [$beans->id, 'ندارد', 'لوبیا قرمز', '۹۵۰,۰۰۰'],
+                [$lentils->id, 'ندارد', 'عدس', 700000],
                 ['', '', '', ''],
             ]))
             ->call('importPrices')
@@ -142,10 +143,10 @@ class OnlineStoreRoutinesTest extends TestCase
 
         Livewire::test(OnlineStoreRoutines::class)
             ->set('excelFile', $this->excel([
-                [$rice->id, 'ندارد', 'برنج هاشمی', 175000],
+                [$rice->id, 'ندارد', 'برنج هاشمی', 1750000],
                 [$beans->id, 'ندارد', 'لوبیا قرمز', 'نامشخص'],
                 [99999, 'ندارد', 'کالای ناموجود', 1000],
-                [$rice->id, 'ندارد', 'برنج هاشمی', 180000],
+                [$rice->id, 'ندارد', 'برنج هاشمی', 1800000],
                 [$beans->id, 'ندارد', 'لوبیا قرمز', 0],
             ]))
             ->call('importPrices')
@@ -170,8 +171,8 @@ class OnlineStoreRoutinesTest extends TestCase
 
         Livewire::test(OnlineStoreRoutines::class)
             ->set('excelFile', $this->excel([
-                [$rice->id, 'ندارد', 'برنج هاشمی', 175000],
-                [$removedId, 'ندارد', 'کالای حذف‌شده', 60000],
+                [$rice->id, 'ندارد', 'برنج هاشمی', 1750000],
+                [$removedId, 'ندارد', 'کالای حذف‌شده', 600000],
             ]))
             ->call('importPrices')
             ->assertSet('importErrors', [])
@@ -206,8 +207,8 @@ class OnlineStoreRoutinesTest extends TestCase
         $this->actingAs($this->admin());
         $rice = $this->product('برنج هاشمی', 150000);
 
-        $first = $this->excel([[$rice->id, 'ندارد', 'برنج هاشمی', 160000]]);
-        $second = $this->excel([[$rice->id, 'ندارد', 'برنج هاشمی', 170000]]);
+        $first = $this->excel([[$rice->id, 'ندارد', 'برنج هاشمی', 1600000]]);
+        $second = $this->excel([[$rice->id, 'ندارد', 'برنج هاشمی', 1700000]]);
 
         Livewire::test(OnlineStoreRoutines::class)->set('excelFile', $first)->call('importPrices');
         Livewire::test(OnlineStoreRoutines::class)->set('excelFile', $second)->call('importPrices');
@@ -237,5 +238,117 @@ class OnlineStoreRoutinesTest extends TestCase
             ->set('excelFile', UploadedFile::fake()->createWithContent('prices.csv', "1,x,y,100\n"))
             ->call('importPrices')
             ->assertHasErrors(['excelFile' => 'mimes']);
+    }
+
+    /**
+     * An .xlsx whose price cells are Excel formulas, as the commerce team fills the file (a VLOOKUP
+     * into their own price list). Each formula carries the number Excel last computed for it, the way
+     * Excel saves a workbook; a null number leaves the formula without one.
+     *
+     * @param  list<array{0: int, 1: string, 2: string, 3: int|string|null}>  $rows  id, name, formula, computed rials (or an Excel error such as #N/A)
+     */
+    private function excelWithFormulas(array $rows): UploadedFile
+    {
+        $cell = fn (string $ref, string $text) => '<c r="'.$ref.'" t="inlineStr"><is><t>'.htmlspecialchars($text).'</t></is></c>';
+        $sheetRows = '<row r="1">'.implode('', array_map(fn ($heading, $col) => $cell($col.'1', $heading), OnlineStoreRoutines::HEADINGS, ['A', 'B', 'C', 'D'])).'</row>';
+        foreach ($rows as $i => [$id, $name, $formula, $value]) {
+            $r = $i + 2;
+            $sheetRows .= '<row r="'.$r.'"><c r="A'.$r.'"><v>'.$id.'</v></c>'.$cell('B'.$r, 'ندارد').$cell('C'.$r, $name)
+                .'<c r="D'.$r.'"'.(is_string($value) ? ' t="e"' : '').'><f>'.htmlspecialchars($formula).'</f>'.($value === null ? '' : '<v>'.$value.'</v>').'</c></row>';
+        }
+
+        $path = tempnam(sys_get_temp_dir(), 'formulas').'.xlsx';
+        $zip = new \ZipArchive;
+        $zip->open($path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+        $zip->addFromString('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>');
+        $zip->addFromString('_rels/.rels', '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
+        $zip->addFromString('xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="قیمت کالاها" sheetId="1" r:id="rId1"/></sheets></workbook>');
+        $zip->addFromString('xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>');
+        $zip->addFromString('xl/worksheets/sheet1.xml', '<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'.$sheetRows.'</sheetData></worksheet>');
+        $zip->close();
+
+        return UploadedFile::fake()->createWithContent('prices.xlsx', file_get_contents($path));
+    }
+
+    public function test_formula_prices_count_by_the_number_excel_computed(): void
+    {
+        $this->actingAs($this->admin());
+        $rice = $this->product('برنج هاشمی', 5934500);
+        $sugar = $this->product('قند صدیق', 150000);
+
+        Livewire::test(OnlineStoreRoutines::class)
+            ->set('excelFile', $this->excelWithFormulas([
+                [$rice->id, 'برنج هاشمی', 'VLOOKUP(C2,[1]Sheet1!$A:$C,3,0)', 68575000],
+                [$sugar->id, 'قند صدیق', 'VLOOKUP(C3,[1]Sheet1!$A:$C,3,0)', 1634000],
+            ]))
+            ->call('importPrices')
+            ->assertSet('importErrors', [])
+            ->assertNotified('قیمت‌ها بروزرسانی شد');
+
+        // rials in the file, tomans on the site
+        $this->assertSame(6857500, (int) $rice->fresh()->price);
+        $this->assertSame(163400, (int) $sugar->fresh()->price);
+    }
+
+    public function test_a_formula_saved_without_its_number_is_reported(): void
+    {
+        $this->actingAs($this->admin());
+        $rice = $this->product('برنج هاشمی', 5934500);
+
+        Livewire::test(OnlineStoreRoutines::class)
+            ->set('excelFile', $this->excelWithFormulas([
+                [$rice->id, 'برنج هاشمی', 'VLOOKUP(C2,[1]Sheet1!$A:$C,3,0)', null],
+            ]))
+            ->call('importPrices')
+            ->assertSet('importErrors', ['سطر ۲: فرمول ستون چهارم عددی ندارد؛ فایل را در اکسل باز کنید تا قیمت ها حساب شوند و دوباره ذخیره کنید.']);
+
+        $this->assertSame(5934500, (int) $rice->fresh()->price);
+    }
+
+    public function test_a_lookup_that_found_nothing_is_reported(): void
+    {
+        $this->actingAs($this->admin());
+        $rice = $this->product('برنج هاشمی', 5934500);
+
+        Livewire::test(OnlineStoreRoutines::class)
+            ->set('excelFile', $this->excelWithFormulas([
+                [$rice->id, 'برنج هاشمی', 'VLOOKUP(C2,[1]Sheet1!$A:$C,3,0)', '#N/A'],
+            ]))
+            ->call('importPrices')
+            ->assertSet('importErrors', ['سطر ۲: فرمول ستون چهارم به جای قیمت خطا داده است (مثلا #N/A)؛ احتمالا این کالا در لیست قیمتی که فرمول از آن می خواند پیدا نشد.']);
+
+        $this->assertSame(5934500, (int) $rice->fresh()->price);
+    }
+
+    public function test_a_price_in_the_wrong_unit_rejects_the_file(): void
+    {
+        $this->actingAs($this->admin());
+        $sugar = $this->product('شکر صدیق', 105500);
+        $oil = $this->product('روغن', 686400);
+        $new = $this->product('کالای بدون قیمت', 0);
+        $rice = $this->product('برنج هاشمی', 150000);
+
+        Livewire::test(OnlineStoreRoutines::class)
+            ->set('excelFile', $this->excel([
+                // typed in tomans: a tenth of the price
+                [$sugar->id, 'ندارد', 'شکر صدیق', 105500],
+                // rials of rials: ten times the price
+                [$oil->id, 'ندارد', 'روغن', 68640000],
+                // a product with no price yet takes any price
+                [$new->id, 'ندارد', 'کالای بدون قیمت', 2000000],
+                // a real change within five times goes through (once the others are fixed)
+                [$rice->id, 'ندارد', 'برنج هاشمی', 1900000],
+            ]))
+            ->call('importPrices')
+            ->assertSet('importErrors', [
+                'سطر ۲: قیمت ۱۰۵,۵۰۰ ریال (۱۰,۵۵۰ تومان) با قیمت فعلی ۱۰۵,۵۰۰ تومان خیلی فرق دارد؛ قیمت ستون چهارم باید به ریال باشد.',
+                'سطر ۳: قیمت ۶۸,۶۴۰,۰۰۰ ریال (۶,۸۶۴,۰۰۰ تومان) با قیمت فعلی ۶۸۶,۴۰۰ تومان خیلی فرق دارد؛ قیمت ستون چهارم باید به ریال باشد.',
+            ])
+            ->assertNotified('هیچ قیمتی تغییر نکرد');
+
+        // one bad row changes nothing at all
+        $this->assertSame(105500, (int) $sugar->fresh()->price);
+        $this->assertSame(0, (int) $new->fresh()->price);
+        $this->assertSame(150000, (int) $rice->fresh()->price);
     }
 }
