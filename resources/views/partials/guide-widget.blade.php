@@ -89,10 +89,19 @@
         transform: scale(0.94);
     }
 
-    .guide-steps__btn:focus-visible {
-        outline: 2px solid var(--brand-primary);
-        outline-offset: 4px;
-        border-radius: 16px;
+    /* no focus ring and no tap flash on any of the guide's buttons, on any device */
+    .guide-steps__btn,
+    .guide-steps__btn:focus,
+    .guide-steps__btn:focus-visible,
+    .guide-sheet__close,
+    .guide-sheet__close:focus,
+    .guide-sheet__close:focus-visible,
+    .guide-sheet__cta,
+    .guide-sheet__cta:focus,
+    .guide-sheet__cta:focus-visible {
+        outline: none;
+        box-shadow: none;
+        -webkit-tap-highlight-color: transparent;
     }
 
     .guide-steps__label {
@@ -404,25 +413,25 @@
         if (!sheet || !overlay) return;
 
         const page = document.querySelector('.mobile-viewport');
-        let opener = null;
 
+        // Focus is not moved into the guide and back: phones draw a ring around whatever the
+        // script focuses, and the ring is not wanted. The tapped button is let go of instead.
         function open(trigger) {
-            opener = trigger;
+            trigger.blur();
             sheet.querySelector('.guide-sheet__body').scrollTop = 0;
             overlay.classList.add('is-open');
             sheet.classList.add('is-open');
             sheet.setAttribute('aria-hidden', 'false');
             // the page behind stays where it is while the guide is open
             if (page) page.style.overflowY = 'hidden';
-            sheet.querySelector('.guide-sheet__close').focus({ preventScroll: true });
         }
 
         function close() {
+            document.activeElement?.blur();
             overlay.classList.remove('is-open');
             sheet.classList.remove('is-open');
             sheet.setAttribute('aria-hidden', 'true');
             if (page) page.style.overflowY = '';
-            if (opener) opener.focus({ preventScroll: true });
         }
 
         document.querySelectorAll('[data-guide-open]').forEach(button => {

@@ -217,103 +217,7 @@
         color: var(--brand-primary);
         font-weight: 700;
     }
-
-    /* =====================================================
-       مودال معرفی «سبد سازمانی» — همون شیشه‌ای‌ای که تو
-       نوار پایین استفاده شده (glass-panel)، فقط بزرگ‌تر و
-       به‌عنوان یه پنل معرفی وسط صفحه.
-    ===================================================== */
-    .intro-modal-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(17, 24, 39, 0.45);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-        z-index: 999;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.25s ease;
-    }
-
-    .intro-modal-overlay.is-open {
-        opacity: 1;
-        pointer-events: auto;
-    }
-
-    .intro-modal {
-        width: 100%;
-        max-width: 380px;
-        border-radius: var(--radius-lg);
-        padding: 28px 22px 22px;
-        text-align: center;
-        transform: translateY(16px) scale(0.97);
-        transition: transform 0.25s ease;
-        background-color: rgba(255, 255, 255, 0.75);
-        backdrop-filter: blur(20px) saturate(180%);
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, 0.6);
-        box-shadow: 0 20px 60px rgba(15, 49, 112, 0.25);
-    }
-
-    .intro-modal-overlay.is-open .intro-modal {
-        transform: translateY(0) scale(1);
-    }
-
-    .intro-modal__image img {
-        width: 120px;
-        height: 120px;
-    }
-
-    .intro-modal__title {
-        font-size: 17px;
-        font-weight: 700;
-        color: #1a1a1a;
-        margin: 0 0 12px;
-    }
-
-    .intro-modal__text {
-        font-size: 13px;
-        line-height: 2;
-        color: #444;
-        margin: 0 0 22px;
-    }
-
-    .intro-modal__btn {
-        display: block;
-        width: 100%;
-        background-color: var(--brand-primary);
-        color: var(--brand-white);
-        border: none;
-        border-radius: 999px;
-        padding: 13px;
-        font-size: 13px;
-        font-weight: 700;
-        font-family: inherit;
-        cursor: pointer;
-        touch-action: manipulation;
-        transition: filter 0.2s, transform 0.2s;
-    }
-
-    .intro-modal__btn:active {
-        transform: scale(0.98);
-    }
 </style>
-
-<!-- ===== مودال معرفی سبد سازمانی ===== -->
-<div class="intro-modal-overlay" id="orgBasketIntroOverlay">
-    <div class="intro-modal">
-        <div class="intro-modal__image">
-            <img src="{{ asset('assets/images/intro-modal.webp') }}" alt="">
-        </div>
-        <h2 class="intro-modal__title">به سرویس سبد خوش آمدید</h2>
-        <p class="intro-modal__text">
-            یک سبد نمونه بسازید و تعداد کارکنان خود را وارد کنید. اقلام سبد بر اساس تعداد کارکنان شما محاسبه شده و پیش‌ فاکتور خرید شما آماده خواهد شد.
-        </p>
-        <button type="button" class="intro-modal__btn" id="orgBasketIntroCloseBtn">متوجه شدم</button>
-    </div>
-</div>
 
 <div class="mobile-viewport">
     <!-- ردیف لوگو -->
@@ -504,41 +408,6 @@
 
             renderDots();
             resetAutoplay();
-        })();
-
-        /* ===== مودال معرفی سبد سازمانی: فقط بار اول برای هر کاربر نشون داده می‌شه ===== */
-        (function () {
-            const STORAGE_KEY = 'orgBasketIntroSeen';
-            const overlay = document.getElementById('orgBasketIntroOverlay');
-            const closeBtn = document.getElementById('orgBasketIntroCloseBtn');
-
-            function openIntro() {
-                overlay.classList.add('is-open');
-                document.body.style.overflow = 'hidden';
-            }
-
-            function closeIntro() {
-                overlay.classList.remove('is-open');
-                document.body.style.overflow = '';
-                try {
-                    localStorage.setItem(STORAGE_KEY, '1');
-                } catch (e) {
-                    /* localStorage در دسترس نبود؛ مشکلی نیست */
-                }
-            }
-
-            let alreadySeen = false;
-            try {
-                alreadySeen = localStorage.getItem(STORAGE_KEY) === '1';
-            } catch (e) {
-                alreadySeen = false;
-            }
-
-            if (!alreadySeen) {
-                openIntro();
-            }
-
-            closeBtn.addEventListener('click', closeIntro);
         })();
     </script>
     <!-- عمداً اینجا mobile-viewport بسته نمی‌شه؛ صفحه‌ای که این partial رو include می‌کنه (مثل products.blade.php) خودش در آخرش </div> می‌ذاره -->
