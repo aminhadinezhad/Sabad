@@ -5,10 +5,10 @@
     // the full guide: [picture, title, text]
     $guideSteps = [
         ['guide/step-basket.webp', 'سبد یک نفر را بسازید', 'اقلام مورد نیاز یک نفر را انتخاب کنید؛ مثل برنج، روغن، حبوبات، چای و ...'],
-        ['guide/step-staff.webp', 'تعداد پرسنل را وارد کنید', 'تعداد کارکنانی که سبد برایشان تهیه می شود را بنویسید؛ مثلا ۵۰ نفر.'],
+        ['guide/step-staff.webp', 'تعداد پرسنل را وارد کنید', 'در سبد خرید، تعداد کارکنانی که سبد برایشان تهیه می شود را بنویسید؛ مثلا ۵۰ نفر.'],
         ['guide/step-baskets.webp', 'سیستم محاسبه می کند', 'سبد یک نفر × تعداد پرسنل = سبد کل شرکت. مقدار هر قلم خودکار حساب می شود.'],
         ['guide/step-proforma.webp', 'پیش فاکتور آماده می شود', 'یک پیش فاکتور اولیه برای کل شرکت ساخته می شود که می توانید آن را ببینید و دریافت کنید.'],
-        ['guide/step-done.webp', 'بررسی و ثبت سفارش', 'شرکت پیش فاکتور را بررسی و سفارش را تایید می کند؛ تامین فلات تامین و تحویل سبدها را انجام می دهد.'],
+        ['guide/step-done.webp', 'بررسی و ثبت سفارش', 'شرکت پیش فاکتور را بررسی و سفارش را تایید می کند؛ تامین فلات فرآیند تامین و تحویل سبدها را انجام می دهد.'],
     ];
 @endphp
 <style>
@@ -193,6 +193,10 @@
         padding: 10px 16px 0;
         border-radius: 24px 24px 0 0;
         background-color: var(--brand-white);
+        /* the strip is what is pulled down to close the sheet: the gesture is the page's own, not
+           the browser's (no pull to refresh, no scroll), and no text gets selected by a mouse drag */
+        touch-action: none;
+        user-select: none;
     }
 
     .guide-sheet__handle {
@@ -210,8 +214,8 @@
         z-index: 1;
         display: grid;
         place-items: center;
-        width: 42px;
-        height: 42px;
+        width: 36px;
+        height: 36px;
         padding: 0;
         border: 0;
         border-radius: 50%;
@@ -418,7 +422,7 @@
     <div class="guide-sheet__top">
         <div class="guide-sheet__handle"></div>
         <button type="button" class="guide-sheet__close" data-guide-close aria-label="بستن">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
                 <path d="M18 6 6 18M6 6l12 12"></path>
             </svg>
         </button>
@@ -489,13 +493,50 @@
             document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
 
-        // pulled down by its handle, the sheet closes
+        // Held by its top strip (a finger, or the mouse) the sheet follows the pointer down, and the
+        // shade behind it fades as it goes. Let go far enough down, or flicked down, it glides the
+        // rest of the way and closes; otherwise it glides back up.
         const top = sheet.querySelector('.guide-sheet__top');
-        let startY = null;
-        top.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
-        top.addEventListener('touchend', e => {
-            if (startY !== null && e.changedTouches[0].clientY - startY > 60) close();
-            startY = null;
-        }, { passive: true });
+        /** Share of the sheet's height it must be pulled down to close when let go. */
+        const CLOSE_SHARE = 0.25;
+        /** Downward speed, in pixels per millisecond, that closes it whatever the distance. */
+        const FLICK_SPEED = 0.5;
+        let drag = null;
+
+        top.addEventListener('pointerdown', e => {
+            if (e.button !== 0 || e.target.closest('.guide-sheet__close')) return;
+            drag = { id: e.pointerId, startY: e.clientY, y: e.clientY, t: e.timeStamp, speed: 0, height: sheet.offsetHeight };
+            top.setPointerCapture(e.pointerId);
+            sheet.style.transition = 'none';
+            overlay.style.transition = 'none';
+        });
+
+        top.addEventListener('pointermove', e => {
+            if (!drag || e.pointerId !== drag.id) return;
+            const dy = Math.max(0, e.clientY - drag.startY);
+            const dt = e.timeStamp - drag.t;
+            if (dt > 0) drag.speed = (e.clientY - drag.y) / dt;
+            drag.y = e.clientY;
+            drag.t = e.timeStamp;
+            sheet.style.transform = `translate(-50%, ${dy}px)`;
+            overlay.style.opacity = String(1 - dy / drag.height);
+        });
+
+        function letGo(e) {
+            if (!drag || e.pointerId !== drag.id) return;
+            const dy = Math.max(0, e.clientY - drag.startY);
+            const closing = dy > drag.height * CLOSE_SHARE || (drag.speed > FLICK_SPEED && dy > 20);
+            drag = null;
+            // the transitions come back first, so what follows glides from where the finger left it
+            sheet.style.transition = '';
+            overlay.style.transition = '';
+            void sheet.offsetHeight;
+            sheet.style.transform = '';
+            overlay.style.opacity = '';
+            if (closing) close();
+        }
+
+        top.addEventListener('pointerup', letGo);
+        top.addEventListener('pointercancel', letGo);
     })();
 </script>
