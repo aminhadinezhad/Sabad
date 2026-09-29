@@ -1,6 +1,6 @@
-{{-- Under the banner: the service in three steps, joined by dotted lines. Only a step's icon opens the
-     full guide, a sheet that slides up from the bottom: the five steps, picture and text taking turns at
-     the right and the left. --}}
+{{-- Under the banner: the service in three steps, joined by dotted lines. A step's icon, or «راهنمای کامل»,
+     opens the full guide (nothing else on the card does): a sheet that slides up from the bottom, the five
+     steps with picture and text taking turns at the right and the left. --}}
 @php
     // the full guide: [picture, title, text]
     $guideSteps = [
@@ -25,9 +25,16 @@
         padding: 14px 12px 16px;
     }
 
+    .guide-strip__head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 0 4px;
+    }
+
     .guide-strip__title {
         margin: 0;
-        padding: 0 4px;
         font-size: 15px;
         font-weight: 700;
         color: #1a1a1a;
@@ -35,9 +42,24 @@
 
     .guide-strip__subtitle {
         margin: 2px 0 0;
-        padding: 0 4px;
         font-size: 11px;
         color: #8a8a8a;
+    }
+
+    /* «راهنمای کامل»: besides the icons, the one other thing on the card that opens the guide */
+    .guide-strip__more {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        flex-shrink: 0;
+        padding: 2px 0;
+        border: 0;
+        background: none;
+        color: var(--brand-complementary);
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
     }
 
     .guide-steps {
@@ -90,6 +112,9 @@
     }
 
     /* no focus ring and no tap flash on any of the guide's buttons, on any device */
+    .guide-strip__more,
+    .guide-strip__more:focus,
+    .guide-strip__more:focus-visible,
     .guide-steps__btn,
     .guide-steps__btn:focus,
     .guide-steps__btn:focus-visible,
@@ -158,10 +183,16 @@
     }
 
     /* the handle and the close button stay put while the steps scroll */
+    /* tall enough to hold the whole close button, so the steps scroll below it rather than under
+       or over it, and stacked above them for phones that draw a scrolling area on top */
     .guide-sheet__top {
         position: relative;
+        z-index: 2;
         flex-shrink: 0;
-        padding: 10px 16px 4px;
+        height: 62px;
+        padding: 10px 16px 0;
+        border-radius: 24px 24px 0 0;
+        background-color: var(--brand-white);
     }
 
     .guide-sheet__handle {
@@ -174,12 +205,13 @@
 
     .guide-sheet__close {
         position: absolute;
-        top: 12px;
+        top: 14px;
         left: 14px;
+        z-index: 1;
         display: grid;
         place-items: center;
-        width: 32px;
-        height: 32px;
+        width: 42px;
+        height: 42px;
         padding: 0;
         border: 0;
         border-radius: 50%;
@@ -192,8 +224,7 @@
     .guide-sheet__body {
         overflow-y: auto;
         overscroll-behavior: contain;
-        padding: 14px 20px 24px;
-        -webkit-overflow-scrolling: touch;
+        padding: 0 20px 24px;
         scrollbar-width: none;
     }
 
@@ -316,8 +347,18 @@
 
 <section class="guide-strip">
     <div class="guide-strip__card">
-        <h2 class="guide-strip__title">سبد سازمانی در سه قدم</h2>
-        <p class="guide-strip__subtitle">سبد ارزاق کل شرکت، به سادگی سبد یک نفر</p>
+        <div class="guide-strip__head">
+            <div>
+                <h2 class="guide-strip__title">سبد سازمانی در سه قدم</h2>
+                <p class="guide-strip__subtitle">سبد ارزاق کل شرکت، به سادگی سبد یک نفر</p>
+            </div>
+            <button type="button" class="guide-strip__more" data-guide-open>
+                راهنمای کامل
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M15 6C15 6 9.00001 10.4189 9 12C8.99999 13.5812 15 18 15 18"></path>
+                </svg>
+            </button>
+        </div>
 
         <ol class="guide-steps">
             <li class="guide-steps__item">
@@ -377,7 +418,7 @@
     <div class="guide-sheet__top">
         <div class="guide-sheet__handle"></div>
         <button type="button" class="guide-sheet__close" data-guide-close aria-label="بستن">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
                 <path d="M18 6 6 18M6 6l12 12"></path>
             </svg>
         </button>
