@@ -173,12 +173,19 @@
         background-color: var(--brand-white);
         box-shadow: 0 -12px 40px rgba(15, 49, 112, 0.18);
         transform: translate(-50%, 100%);
-        transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+        /* closing, it stays visible until it has slid all the way down (the hiding waits for the
+           slide), so it goes down exactly the way it came up */
+        transition:
+            transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+            visibility 0s linear 0.35s;
         visibility: hidden;
     }
 
     .guide-sheet.is-open {
         transform: translate(-50%, 0);
+        transition:
+            transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+            visibility 0s;
         visibility: visible;
     }
 
@@ -214,12 +221,12 @@
         z-index: 1;
         display: grid;
         place-items: center;
+        /* just the cross, no disc behind it; the button stays big enough to hit with a thumb */
         width: 36px;
         height: 36px;
         padding: 0;
         border: 0;
-        border-radius: 50%;
-        background-color: #f2f2f2;
+        background: none;
         color: #555;
         cursor: pointer;
     }
@@ -372,13 +379,10 @@
                         <path fill="#144390" d="M82.09,107.94H18.37c-8.43,0-15.3-6.86-15.3-15.3V28.92c0-8.44,6.86-15.3,15.3-15.3h63.72c8.43,0,15.3,6.86,15.3,15.3v63.72C97.39,101.08,90.53,107.94,82.09,107.94z M18.37,15.44c-7.44,0-13.48,6.05-13.48,13.48v63.72c0,7.44,6.05,13.48,13.48,13.48h63.72c7.44,0,13.48-6.05,13.48-13.48V28.92c0-7.44-6.05-13.48-13.48-13.48C82.09,15.44,18.37,15.44,18.37,15.44z"/>
                         <circle fill="#F08816" cx="89.39" cy="18.31" r="15.59"/>
                         <path fill="#FFFFFF" d="M87.31,17.28c0-1.58-0.05-3.05-0.15-4.4s-0.3-2.64-0.61-3.86l4.05-0.65c0.76,1.8,1.13,5.75,1.13,11.85v7.45H87.3v-8.26L87.31,17.28L87.31,17.28z"/>
-                        {{-- the cart line icon (as in the bottom bar), drawn in the frame in orange --}}
-                        <g fill="none" stroke="#F08816" stroke-width="1.2" transform="translate(19.2 27.4) scale(2.8)">
-                            <path d="M2 3L2.26491 3.0883C3.58495 3.52832 4.24497 3.74832 4.62248 4.2721C5 4.79587 5 5.49159 5 6.88304V9.5C5 12.3284 5 13.7426 5.87868 14.6213C6.75736 15.5 8.17157 15.5 11 15.5H19" stroke-linecap="round"/>
-                            <path d="M7.5 18C8.32843 18 9 18.6716 9 19.5C9 20.3284 8.32843 21 7.5 21C6.67157 21 6 20.3284 6 19.5C6 18.6716 6.67157 18 7.5 18Z"/>
-                            <path d="M16.5 18.0001C17.3284 18.0001 18 18.6716 18 19.5001C18 20.3285 17.3284 21.0001 16.5 21.0001C15.6716 21.0001 15 20.3285 15 19.5001C15 18.6716 15.6716 18.0001 16.5 18.0001Z"/>
-                            <path d="M11 9H8" stroke-linecap="round"/>
-                            <path d="M5 6H16.4504C18.5054 6 19.5328 6 19.9775 6.67426C20.4221 7.34853 20.0173 8.29294 19.2078 10.1818L18.7792 11.1818C18.4013 12.0636 18.2123 12.5045 17.8366 12.7523C17.4609 13 16.9812 13 16.0218 13H5"/>
+                        {{-- the basket line icon, drawn in the frame in orange --}}
+                        <g fill="none" stroke="#F08816" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" transform="translate(18.8 29.8) scale(2.6)">
+                            <path d="M2.5 8.5H21.5L20.3356 15.4864C19.9365 17.8809 19.737 19.0781 18.8977 19.7891C18.0585 20.5 16.8448 20.5 14.4172 20.5H9.58276C7.15525 20.5 5.94149 20.5 5.10226 19.7891C4.26302 19.0781 4.06348 17.8809 3.6644 15.4864L2.5 8.5Z"/>
+                            <path d="M12 12.5V16.5M16 12.5V16.5M8 12.5V16.5M22.5 8.5H1.5M18 8.5L15 3.5M6 8.5L9 3.5"/>
                         </g>
                     </svg>
                 </button>
@@ -402,12 +406,15 @@
             </li>
             <li class="guide-steps__item">
                 <button type="button" class="guide-steps__btn" data-guide-open aria-label="راهنما: پیش فاکتور بگیر">
-                    {{-- a stand-in in the same style (frame, numbered badge), until the user sends the invoice SVG --}}
+                    {{-- the invoice line icon the user sent, in the same frame with a numbered badge --}}
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 106 112" aria-hidden="true">
                         <path fill="#144390" d="M82.09,107.94H18.37c-8.43,0-15.3-6.86-15.3-15.3V28.92c0-8.44,6.86-15.3,15.3-15.3h63.72c8.43,0,15.3,6.86,15.3,15.3v63.72C97.39,101.08,90.53,107.94,82.09,107.94z M18.37,15.44c-7.44,0-13.48,6.05-13.48,13.48v63.72c0,7.44,6.05,13.48,13.48,13.48h63.72c7.44,0,13.48-6.05,13.48-13.48V28.92c0-7.44-6.05-13.48-13.48-13.48C82.09,15.44,18.37,15.44,18.37,15.44z"/>
                         <circle fill="#F08816" cx="89.39" cy="18.31" r="15.59"/>
                         <text x="89.39" y="27.5" fill="#FFFFFF" font-family="Kalameh, Tahoma, sans-serif" font-size="24" font-weight="700" text-anchor="middle">۳</text>
-                        <path fill="none" stroke="#F08816" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round" d="M33 36h34v52l-8.5-5-8.5 5-8.5-5-8.5 5V36z M41 50h18 M41 60h18 M41 70h10"/>
+                        <g fill="none" stroke="#F08816" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" transform="translate(18.8 29.8) scale(2.6)">
+                            <path d="M8.06805 2.72546L7.89604 2.86189C7.71084 3.00878 7.61823 3.08223 7.52605 3.12852C7.20698 3.28874 6.8259 3.26781 6.52663 3.07364C6.44017 3.01754 6.35631 2.93441 6.1886 2.76813C5.78856 2.37152 5.58853 2.17321 5.43777 2.10043C4.89824 1.83999 4.25045 2.10601 4.0547 2.6684C4 2.82556 4 3.10601 4 3.66691V20.698C4 20.9548 4 21.0832 4.01158 21.158C4.12554 21.8938 4.98624 22.2473 5.59159 21.8069C5.65313 21.7621 5.74474 21.6713 5.92789 21.4897C6.0431 21.3755 6.10079 21.3183 6.15539 21.2735C6.66242 20.8578 7.38352 20.8182 7.93376 21.1759C7.99303 21.2144 8.05667 21.2649 8.18395 21.3658L8.32009 21.4738C8.55044 21.6565 8.66564 21.7479 8.78105 21.8104C9.22912 22.053 9.77088 22.053 10.219 21.8104C10.3344 21.7479 10.4495 21.6565 10.6799 21.4738L10.75 21.4182C11.047 21.1827 11.1955 21.0649 11.3484 20.9918C11.7601 20.7949 12.2399 20.7949 12.6516 20.9918C12.8045 21.0649 12.953 21.1827 13.25 21.4182L13.3201 21.4738C13.5505 21.6565 13.6656 21.7479 13.781 21.8104C14.2291 22.053 14.7709 22.053 15.219 21.8104C15.3344 21.7479 15.4496 21.6565 15.6799 21.4738L15.816 21.3658C15.9433 21.2649 16.007 21.2144 16.0662 21.1759C16.6165 20.8182 17.3376 20.8578 17.8446 21.2735C17.8992 21.3183 17.9569 21.3755 18.0721 21.4897C18.2553 21.6713 18.3469 21.7621 18.4084 21.8069C19.0138 22.2473 19.8745 21.8938 19.9884 21.158C20 21.0832 20 20.9548 20 20.698V3.66691C20 3.10601 20 2.82556 19.9453 2.6684C19.7495 2.10601 19.1018 1.83999 18.5622 2.10043C18.4115 2.17321 18.2114 2.37152 17.8114 2.76813C17.6437 2.93441 17.5598 3.01754 17.4734 3.07364C17.1741 3.26781 16.793 3.28874 16.4739 3.12852C16.3818 3.08223 16.2892 3.00878 16.104 2.86189L15.932 2.72546C15.4614 2.35223 15.2261 2.16562 14.9695 2.08178C14.6646 1.98214 14.3354 1.98214 14.0305 2.08178C13.7739 2.16562 13.5386 2.35224 13.068 2.72546L13 2.77943C12.6428 3.06273 12.4642 3.20438 12.2661 3.2586C12.092 3.30627 11.908 3.30627 11.7339 3.2586C11.5358 3.20438 11.3572 3.06273 11 2.77943L10.932 2.72546C10.4614 2.35223 10.2261 2.16562 9.96953 2.08178C9.66458 1.98214 9.33542 1.98214 9.03047 2.08178C8.7739 2.16562 8.53862 2.35223 8.06805 2.72546Z"/>
+                            <path d="M8 12H16M8 8H12M8 16H16"/>
+                        </g>
                     </svg>
                 </button>
                 <span class="guide-steps__label">پیش فاکتور بگیر</span>
@@ -493,38 +500,33 @@
             document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
 
-        // Held by its top strip (a finger, or the mouse) the sheet follows the pointer down, and the
-        // shade behind it fades as it goes. Let go far enough down, or flicked down, it glides the
-        // rest of the way and closes; otherwise it glides back up.
-        const top = sheet.querySelector('.guide-sheet__top');
+        // Pulled down, the sheet follows the finger (or the mouse) and the shade behind it fades as
+        // it goes. Let go far enough down, or flicked down, it glides the rest of the way and
+        // closes; otherwise it glides back up.
         /** Share of the sheet's height it must be pulled down to close when let go. */
         const CLOSE_SHARE = 0.25;
         /** Downward speed, in pixels per millisecond, that closes it whatever the distance. */
         const FLICK_SPEED = 0.5;
         let drag = null;
 
-        top.addEventListener('pointerdown', e => {
-            if (e.button !== 0 || e.target.closest('.guide-sheet__close')) return;
-            drag = { id: e.pointerId, startY: e.clientY, y: e.clientY, t: e.timeStamp, speed: 0, height: sheet.offsetHeight };
-            top.setPointerCapture(e.pointerId);
+        function beginDrag(y, t) {
+            drag = { startY: y, y, t, speed: 0, height: sheet.offsetHeight };
             sheet.style.transition = 'none';
             overlay.style.transition = 'none';
-        });
+        }
 
-        top.addEventListener('pointermove', e => {
-            if (!drag || e.pointerId !== drag.id) return;
-            const dy = Math.max(0, e.clientY - drag.startY);
-            const dt = e.timeStamp - drag.t;
-            if (dt > 0) drag.speed = (e.clientY - drag.y) / dt;
-            drag.y = e.clientY;
-            drag.t = e.timeStamp;
+        function followDrag(y, t) {
+            const dt = t - drag.t;
+            if (dt > 0) drag.speed = (y - drag.y) / dt;
+            drag.y = y;
+            drag.t = t;
+            const dy = Math.max(0, y - drag.startY);
             sheet.style.transform = `translate(-50%, ${dy}px)`;
             overlay.style.opacity = String(1 - dy / drag.height);
-        });
+        }
 
-        function letGo(e) {
-            if (!drag || e.pointerId !== drag.id) return;
-            const dy = Math.max(0, e.clientY - drag.startY);
+        function endDrag() {
+            const dy = Math.max(0, drag.y - drag.startY);
             const closing = dy > drag.height * CLOSE_SHARE || (drag.speed > FLICK_SPEED && dy > 20);
             drag = null;
             // the transitions come back first, so what follows glides from where the finger left it
@@ -536,7 +538,53 @@
             if (closing) close();
         }
 
-        top.addEventListener('pointerup', letGo);
-        top.addEventListener('pointercancel', letGo);
+        // The top strip (the grey bar) can always be pulled, by a finger or the mouse.
+        const top = sheet.querySelector('.guide-sheet__top');
+        let pointerId = null;
+
+        top.addEventListener('pointerdown', e => {
+            if (e.button !== 0 || e.target.closest('.guide-sheet__close')) return;
+            pointerId = e.pointerId;
+            top.setPointerCapture(e.pointerId);
+            beginDrag(e.clientY, e.timeStamp);
+        });
+        top.addEventListener('pointermove', e => {
+            if (drag && e.pointerId === pointerId) followDrag(e.clientY, e.timeStamp);
+        });
+        ['pointerup', 'pointercancel'].forEach(type => top.addEventListener(type, e => {
+            if (!drag || e.pointerId !== pointerId) return;
+            followDrag(e.clientY, e.timeStamp);
+            pointerId = null;
+            endDrag();
+        }));
+
+        // The steps, by a finger, as in the apps: while they are scrolled down a pull scrolls them
+        // back up; once they are at their top, pulling further down brings the sheet down with it,
+        // in the same gesture.
+        const body = sheet.querySelector('.guide-sheet__body');
+        let lastY = null;
+
+        body.addEventListener('touchstart', e => {
+            lastY = e.touches.length === 1 ? e.touches[0].clientY : null;
+        }, { passive: true });
+
+        body.addEventListener('touchmove', e => {
+            if (lastY === null) return;
+            const y = e.touches[0].clientY;
+            if (!drag) {
+                const pullingDown = y > lastY;
+                lastY = y;
+                if (!(pullingDown && body.scrollTop <= 0)) return;
+                beginDrag(y, e.timeStamp);
+            }
+            // from here the finger moves the sheet, not the steps
+            e.preventDefault();
+            followDrag(y, e.timeStamp);
+        }, { passive: false });
+
+        ['touchend', 'touchcancel'].forEach(type => body.addEventListener(type, () => {
+            lastY = null;
+            if (drag && pointerId === null) endDrag();
+        }));
     })();
 </script>
