@@ -4,11 +4,11 @@
 @php
     // the full guide: [picture, title, text]
     $guideSteps = [
-        ['guide/step-basket.webp', 'سبد یک نفر را بسازید', 'اقلام مورد نیاز یک نفر را انتخاب کنید؛ مثل برنج، روغن، حبوبات، چای و ...'],
-        ['guide/step-staff.webp', 'تعداد پرسنل را وارد کنید', 'در سبد خرید، تعداد کارکنانی که سبد برایشان تهیه می شود را بنویسید؛ مثلا ۵۰ نفر.'],
-        ['guide/step-baskets.webp', 'سیستم محاسبه می کند', 'سبد یک نفر × تعداد پرسنل = سبد کل شرکت. مقدار هر قلم خودکار حساب می شود.'],
-        ['guide/step-proforma.webp', 'پیش فاکتور آماده می شود', 'یک پیش فاکتور اولیه برای کل شرکت ساخته می شود که می توانید آن را ببینید و دریافت کنید.'],
-        ['guide/step-done.webp', 'بررسی و ثبت سفارش', 'شرکت پیش فاکتور را بررسی و سفارش را تایید می کند؛ تامین فلات فرآیند تامین و تحویل سبدها را انجام می دهد.'],
+        ['guide/basket.webp', 'سبد یک نفر را بسازید', 'اقلام مورد نیاز یک نفر را انتخاب کنید؛ مثل برنج، روغن، حبوبات، چای و ...'],
+        ['guide/staff.webp', 'تعداد پرسنل را وارد کنید', 'در سبد خرید، تعداد کارکنانی که سبد برایشان تهیه می شود را بنویسید؛ مثلا ۵۰ نفر.'],
+        ['guide/baskets.webp', 'سیستم محاسبه می کند', 'سبد یک نفر × تعداد پرسنل = سبد کل شرکت. مقدار هر قلم خودکار حساب می شود.'],
+        ['guide/proforma.webp', 'پیش فاکتور آماده می شود', 'یک پیش فاکتور اولیه برای کل شرکت ساخته می شود که می توانید آن را ببینید و دریافت کنید.'],
+        ['guide/done.webp', 'بررسی و ثبت سفارش', 'شرکت پیش فاکتور را بررسی و سفارش را تایید می کند؛ تامین فلات فرآیند تامین و تحویل سبدها را انجام می دهد.'],
     ];
 @endphp
 <style>
@@ -301,6 +301,12 @@
         height: auto;
         aspect-ratio: 1;
         object-fit: contain;
+        /* the picture's edges fade into the page, so a coloured shape cut off at the edge of the
+           picture ends softly rather than in a straight line */
+        -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent), linear-gradient(to bottom, transparent, #000 8%, #000 92%, transparent);
+        -webkit-mask-composite: source-in;
+        mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent), linear-gradient(to bottom, transparent, #000 8%, #000 92%, transparent);
+        mask-composite: intersect;
     }
 
     .guide-row__number {
