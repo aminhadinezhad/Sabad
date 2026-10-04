@@ -286,12 +286,13 @@
         font-size: 11px;
     }
 
-    /* in full, however long */
+    /* in full, however long; the colour and weight of a product card's name */
     .bundle-card__summary {
         margin: 0;
         font-size: 12px;
+        font-weight: 500;
         line-height: 1.8;
-        color: #555;
+        color: #333;
     }
 
 </style>

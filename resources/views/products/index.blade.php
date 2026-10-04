@@ -203,7 +203,7 @@
 
         .product-card__price {
             font-size: 13px;
-            font-weight: 600;
+            font-weight: 700;
             color: #222;
             display: flex;
             align-items: baseline;
@@ -217,7 +217,8 @@
         .product-card__price-unit {
             font-size: 10px;
             font-weight: 400;
-            color: #888;
+            /* the lightest grey small text still reads on white at 4.5:1 */
+            color: #757575;
         }
 
         .product-card__old-price {
