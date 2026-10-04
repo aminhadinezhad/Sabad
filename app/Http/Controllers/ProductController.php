@@ -8,8 +8,12 @@ class ProductController extends Controller
 {
     public function index()
     {
-        $products = Product::orderBy('name')->get();
+        $products = Product::singles()->orderBy('name')->get();
 
-        return view('products.index', ['products' => $products]);
+        // «سبد اختصاصی»: the bundles, cheapest first, with their products for the line under the
+        // name, the VAT and whether any of them is out of stock
+        $bundles = Product::bundles()->with('bundleItems.product')->orderBy('price')->orderBy('name')->get();
+
+        return view('products.index', ['products' => $products, 'bundles' => $bundles]);
     }
 }

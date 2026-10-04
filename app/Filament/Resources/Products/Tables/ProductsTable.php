@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Products\Tables;
 
+use App\Filament\Resources\Products\ProductResource;
+use App\Filament\Resources\Products\Schemas\ProductForm;
 use App\Models\Product;
 use App\Support\PersianDate;
 use Filament\Actions\Action;
@@ -37,12 +39,9 @@ class ProductsTable
 
                 TextColumn::make('category')
                     ->label('دسته‌بندی')
-                    ->formatStateUsing(fn ($state) => match ($state) {
-                        'rice' => 'برنج',
-                        'legumes' => 'حبوبات',
-                        'groceries' => 'خواربار',
-                        default => $state,
-                    }),
+                    ->formatStateUsing(fn ($state) => ProductForm::CATEGORIES[$state] ?? $state)
+                    ->badge(fn ($state) => $state === Product::BUNDLE_CATEGORY)
+                    ->color(fn ($state) => $state === Product::BUNDLE_CATEGORY ? 'warning' : null),
 
                 TextColumn::make('brand.name')
                     ->label('برند'),
@@ -72,11 +71,7 @@ class ProductsTable
                 SelectFilter::make('category')
                     ->label('دسته‌بندی')
                     ->placeholder('یک گزینه را انتخاب کنید')
-                    ->options([
-                        'rice' => 'برنج',
-                        'legumes' => 'حبوبات',
-                        'groceries' => 'خواربار',
-                    ]),
+                    ->options(ProductForm::CATEGORIES),
 
                 SelectFilter::make('brand_id')
                     ->label('برند')
@@ -98,7 +93,7 @@ class ProductsTable
             ->deferFilters()
             ->recordActions([
                 EditAction::make(),
-                DeleteAction::make(),
+                ProductResource::guardBundleItemDeletion(DeleteAction::make()),
                 Action::make('viewOnSite')
                     ->label('مشاهده در سایت')
                     ->icon('heroicon-o-eye')

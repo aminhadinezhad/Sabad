@@ -3,11 +3,11 @@
 namespace App\Filament\Resources\Products\Pages;
 
 use App\Filament\Resources\Products\ProductResource;
+use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
 use Filament\Resources\Pages\EditRecord;
-use Filament\Actions\Action;
 
 class EditProduct extends EditRecord
 {
@@ -19,12 +19,19 @@ class EditProduct extends EditRecord
             Action::make('viewOnSite')
                 ->label('مشاهده در سایت')
                 ->icon('heroicon-o-eye')
-                ->url(fn($record) => 'https://sabad.taminfalat.com/#product-' . $record->id)
+                ->url(fn ($record) => 'https://sabad.taminfalat.com/#product-'.$record->id)
                 ->openUrlInNewTab(),
-
-            DeleteAction::make(),
+            ProductResource::guardBundleItemDeletion(DeleteAction::make()),
             ForceDeleteAction::make(),
             RestoreAction::make(),
         ];
+    }
+
+    /** A bundle's products may have changed: its price follows them. */
+    protected function afterSave(): void
+    {
+        if ($this->record->isBundle()) {
+            $this->record->syncPriceWithItems();
+        }
     }
 }

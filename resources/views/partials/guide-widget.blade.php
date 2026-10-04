@@ -7,8 +7,8 @@
         ['guide/basket.webp', 'سبد یک نفر را بسازید', 'اقلام مورد نیاز یک نفر را انتخاب کنید؛ مثل برنج، روغن، حبوبات، چای و ...'],
         ['guide/staff.webp', 'تعداد پرسنل را وارد کنید', 'در سبد خرید، تعداد کارکنانی که سبد برایشان تهیه می شود را بنویسید؛ مثلا ۵۰ نفر.'],
         ['guide/baskets.webp', 'سیستم محاسبه می کند', 'سبد یک نفر × تعداد پرسنل = سبد کل شرکت. مقدار هر قلم خودکار حساب می شود.'],
-        ['guide/proforma.webp', 'پیش فاکتور آماده می شود', 'یک پیش فاکتور اولیه برای کل شرکت ساخته می شود که می توانید آن را ببینید و دریافت کنید.'],
-        ['guide/done.webp', 'بررسی و ثبت سفارش', 'شرکت پیش فاکتور را بررسی و سفارش را تایید می کند؛ تامین فلات فرآیند تامین و تحویل سبدها را انجام می دهد.'],
+        ['guide/proforma.webp', 'پیش فاکتور آماده می شود', 'یک پیش فاکتور اولیه برای سفارش شما ساخته می شود که می توانید آن را ببینید و دریافت کنید.'],
+        ['guide/done.webp', 'بررسی و ثبت سفارش', 'کارشناسان فروش ما با شما تماس می گیرند و پس از نهایی شدن سفارش، تامین فلات فرآیند تامین و تحویل سبدها را انجام می دهد.'],
     ];
 @endphp
 <style>
@@ -216,14 +216,14 @@
 
     .guide-sheet__close {
         position: absolute;
-        top: 14px;
-        left: 14px;
+        top: 10px;
+        left: 10px;
         z-index: 1;
         display: grid;
         place-items: center;
-        /* just the cross, no disc behind it; the button stays big enough to hit with a thumb */
-        width: 36px;
-        height: 36px;
+        /* just the cross, no disc behind it; the button is the 44px phones recommend for a finger */
+        width: 44px;
+        height: 44px;
         padding: 0;
         border: 0;
         background: none;
@@ -424,7 +424,7 @@
                     </svg>
                 </button>
                 <span class="guide-steps__label">پیش فاکتور بگیر</span>
-                <span class="guide-steps__hint">برای کل شرکت</span>
+                <span class="guide-steps__hint">برای سفارش</span>
             </li>
         </ol>
     </div>
@@ -435,8 +435,8 @@
     <div class="guide-sheet__top">
         <div class="guide-sheet__handle"></div>
         <button type="button" class="guide-sheet__close" data-guide-close aria-label="بستن">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                <path d="M18 6 6 18M6 6l12 12"></path>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M18 6L12 12M12 12L6 18M12 12L18 18M12 12L6 6"></path>
             </svg>
         </button>
     </div>

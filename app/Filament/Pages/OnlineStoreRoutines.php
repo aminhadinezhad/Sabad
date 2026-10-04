@@ -80,7 +80,8 @@ class OnlineStoreRoutines extends Page
         $writer->getCurrentSheet()->setSheetView((new SheetView)->setRightToLeft(true));
         $writer->addRow(Row::fromValues(self::HEADINGS));
 
-        Product::orderBy('id')->each(function (Product $product) use ($writer) {
+        // a bundle's price is its products' prices added up, so it has no row of its own here
+        Product::singles()->orderBy('id')->each(function (Product $product) use ($writer) {
             $writer->addRow(Row::fromValues([
                 $product->id,
                 $product->code ?? 'ندارد',
@@ -123,7 +124,7 @@ class OnlineStoreRoutines extends Page
             return;
         }
 
-        [$prices, $skippedRows, $errors] = $this->parsePrices($rows);
+        [$prices, $skippedRows, $errors, $bundleRows] = $this->parsePrices($rows);
 
         if ($errors !== []) {
             $this->rejectImport($errors);
@@ -139,6 +140,9 @@ class OnlineStoreRoutines extends Page
             return;
         }
 
+        // each product saved with a new price passes it on to the bundles it is in (Product::booted)
+        $bundlePricesBefore = Product::bundles()->pluck('price', 'id');
+
         $changed = DB::transaction(function () use ($prices) {
             $changed = 0;
 
@@ -153,6 +157,10 @@ class OnlineStoreRoutines extends Page
             return $changed;
         });
 
+        $bundlesChanged = Product::bundles()->pluck('price', 'id')
+            ->filter(fn ($price, $id) => (int) $price !== (int) ($bundlePricesBefore[$id] ?? $price))
+            ->count();
+
         Storage::disk('local')->putFileAs(
             dirname(self::LAST_IMPORT_PATH),
             $this->excelFile,
@@ -164,16 +172,25 @@ class OnlineStoreRoutines extends Page
         $body = 'قیمت '.PersianHelper::toPersianDigits($changed).' کالا تغییر کرد و '
             .PersianHelper::toPersianDigits(count($prices) - $changed).' کالا بدون تغییر ماند.';
 
+        if ($bundlesChanged > 0) {
+            $body .= ' قیمت '.PersianHelper::toPersianDigits($bundlesChanged).' سبد اختصاصی هم بر اساس کالاهایش به روز شد.';
+        }
+
         if ($skippedRows !== []) {
             $body .= ' '.PersianHelper::toPersianDigits(count($skippedRows)).' سطر مربوط به کالای حذف‌شده بود و نادیده گرفته شد (سطر '
                 .PersianHelper::toPersianDigits(implode('، ', $skippedRows)).').';
+        }
+
+        if ($bundleRows !== []) {
+            $body .= ' '.PersianHelper::toPersianDigits(count($bundleRows)).' سطر مربوط به سبد اختصاصی بود و نادیده گرفته شد؛ قیمت سبدها از کالاهایشان حساب می شود (سطر '
+                .PersianHelper::toPersianDigits(implode('، ', $bundleRows)).').';
         }
 
         Notification::make()
             ->title('قیمت‌ها بروزرسانی شد')
             ->body($body)
             ->success()
-            ->persistent($skippedRows !== [])
+            ->persistent($skippedRows !== [] || $bundleRows !== [])
             ->send();
     }
 
@@ -208,14 +225,16 @@ class OnlineStoreRoutines extends Page
 
     /**
      * @param  array<int, array<int, mixed>>  $rows
-     * @return array{0: array<int, int>, 1: list<int>, 2: list<string>} [قیمت‌ها به تفکیک شناسه کالا، سطرهای کالای حذف‌شده، خطاها]
+     * @return array{0: array<int, int>, 1: list<int>, 2: list<string>, 3: list<int>} [قیمت‌ها به تفکیک شناسه کالا، سطرهای کالای حذف‌شده، خطاها، سطرهای سبد اختصاصی]
      */
     private function parsePrices(array $rows): array
     {
-        $productIds = Product::pluck('id')->flip();
+        $productIds = Product::singles()->pluck('id')->flip();
+        $bundleIds = Product::bundles()->pluck('id')->flip();
         $prices = [];
         $skippedRows = [];
         $errors = [];
+        $bundleRows = [];
 
         foreach ($rows as $number => $cells) {
             $rawId = $cells[0] ?? null;
@@ -233,6 +252,9 @@ class OnlineStoreRoutines extends Page
 
             if ($id === null) {
                 $errors[] = $label.'کد یونیک محصول در ستون اول باید عدد باشد.';
+            } elseif ($bundleIds->has($id)) {
+                // a bundle's price comes from its products, whatever this row says, even an error
+                $bundleRows[] = $number;
             } elseif ($formula === null || (is_string($formula) && str_starts_with($formula, '#'))) {
                 // an Excel error such as #N/A (the reader gives no result for it): a VLOOKUP that
                 // did not find the product
@@ -255,7 +277,7 @@ class OnlineStoreRoutines extends Page
             }
         }
 
-        return [$prices, $skippedRows, $errors];
+        return [$prices, $skippedRows, $errors, $bundleRows];
     }
 
     /**

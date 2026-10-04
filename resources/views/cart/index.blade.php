@@ -193,6 +193,7 @@
 
     .cart-item__remove {
         position: absolute;
+        z-index: 1;
         top: 0;
         right: 0;
         background: none;
@@ -200,6 +201,7 @@
         color: #999;
         width: 24px;
         height: 24px;
+        padding: 0; /* the browser's own padding would squeeze the 16px cross */
         display: flex;
         align-items: center;
         justify-content: center;
@@ -210,6 +212,23 @@
         color: rgb(255, 94, 31);
         transition: 0.2s ease;
         touch-action: manipulation;
+    }
+
+    /* the buttons here look 24-30px but answer a 44px touch, the size phones recommend for a finger */
+    .cart-item__remove::after,
+    .qty-btn::after,
+    .order-modal__close::after {
+        content: "";
+        position: absolute;
+        inset: -10px;
+    }
+
+    .qty-btn::after {
+        inset: -7px;
+    }
+
+    .order-modal__close::after {
+        inset: -14px;
     }
 
     .cart-item__remove:hover {
@@ -226,12 +245,13 @@
         align-items: center;
         border: 1px solid #eee;
         border-radius: 8px;
-        overflow: hidden;
     }
 
     .qty-btn {
+        position: relative;
         background: none;
         border: none;
+        padding: 0; /* the browser's own padding would squeeze the 18px icon */
         width: 30px;
         height: 30px;
         display: flex;
@@ -250,7 +270,7 @@
         min-width: 28px;
         text-align: center;
         font-weight: 700;
-        font-size: 13px;
+        font-size: 14px;
     }
 
     .cart-item__line-total {
@@ -489,7 +509,7 @@
         background-color: #14a0de;
         border: 1px solid #f0f0f0;
         color: var(--brand-white);
-        font-size: 9px;
+        font-size: 11px;
         font-weight: 700;
         min-width: 20px;
         height: 20px;
@@ -556,6 +576,8 @@
     }
 
     .order-modal__close {
+        position: relative;
+        padding: 0;
         border: none;
         color: #333;
         background-color: inherit;
@@ -684,8 +706,8 @@
         <div class="order-modal__header">
             <p class="order-modal__title">اطلاعات ثبت سفارش</p>
             <button type="button" class="order-modal__close" id="closeOrderModalBtn" aria-label="بستن">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085" />
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 6L12 12M12 12L6 18M12 12L18 18M12 12L6 6"></path>
                 </svg>
             </button>
         </div>
@@ -780,7 +802,7 @@
 
             const leftBtn = item.quantity === 1
                 ? `<button type="button" class="qty-btn trash" onclick="removeItem(${idx})">
-                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="2" stroke-linecap="round">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="2" stroke-linecap="round">
                         <path d="M19.5 5.5L18.8803 15.5251C18.7219 18.0864 18.6428 19.3671 18.0008 20.2879C17.6833 20.7431 17.2747 21.1273 16.8007 21.416C15.8421 22 14.559 22 11.9927 22C9.42312 22 8.1383 22 7.17905 21.4149C6.7048 21.1257 6.296 20.7408 5.97868 20.2848C5.33688 19.3626 5.25945 18.0801 5.10461 15.5152L4.5 5.5"></path>
                         <path d="M3 5.5H21M16.0557 5.5L15.3731 4.09173C14.9196 3.15626 14.6928 2.68852 14.3017 2.39681C14.215 2.3321 14.1231 2.27454 14.027 2.2247C13.5939 2 13.0741 2 12.0345 2C10.9688 2 10.436 2 9.99568 2.23412C9.8981 2.28601 9.80498 2.3459 9.71729 2.41317C9.32164 2.7167 9.10063 3.20155 8.65861 4.17126L8.05292 5.5"></path>
                         <path d="M9.5 16.5L9.5 10.5"></path>
@@ -788,7 +810,7 @@
                      </svg>
                    </button>`
                 : `<button type="button" class="qty-btn" onclick="changeQty(${idx}, -1)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M20 12L4 12" />
                      </svg>
                    </button>`;
@@ -811,7 +833,7 @@
                             <button type="button"
                                     class="qty-btn"
                                     onclick="changeQty(${idx},1)">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round">
                                 <path d="M12 5V19M5 12H19" />
                             </svg>
                             </button>
@@ -826,8 +848,8 @@
                     </div>
                 </div>
                 <button type="button" class="cart-item__remove" onclick="removeItem(${idx})" aria-label="حذف محصول">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgb(255, 94, 31)" stroke-width="2" stroke-linecap="round">
-                        <path d="M18 6L6 18M6 6l12 12"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" color="currentColor" fill="none" stroke="rgb(255, 94, 31)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6L12 12M12 12L6 18M12 12L18 18M12 12L6 6"></path>
                     </svg>
                 </button>
             </div>

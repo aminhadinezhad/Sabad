@@ -9,7 +9,9 @@ use App\Filament\Resources\Products\Schemas\ProductForm;
 use App\Filament\Resources\Products\Tables\ProductsTable;
 use App\Models\Product;
 use BackedEnum;
+use Filament\Actions\DeleteAction;
 use Filament\Facades\Filament;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -58,6 +60,33 @@ class ProductResource extends Resource
             'create' => CreateProduct::route('/create'),
             'edit' => EditProduct::route('/{record}/edit'),
         ];
+    }
+
+    /**
+     * A product in a bundle is not deleted: the bundle's price is made of it. The delete button
+     * says which bundles hold it instead.
+     */
+    public static function guardBundleItemDeletion(DeleteAction $action): DeleteAction
+    {
+        return $action->before(function (DeleteAction $action, Product $record) {
+            $bundles = Product::bundles()
+                ->whereHas('bundleItems', fn (Builder $q) => $q->where('product_id', $record->id))
+                ->orderBy('name')
+                ->pluck('name');
+
+            if ($bundles->isEmpty()) {
+                return;
+            }
+
+            Notification::make()
+                ->title('این کالا حذف نشد')
+                ->body('این کالا در '.$bundles->map(fn ($name) => '«'.$name.'»')->implode(' و ').' است. اول آن را از سبد بردارید، بعد حذف کنید.')
+                ->danger()
+                ->persistent()
+                ->send();
+
+            $action->cancel();
+        });
     }
 
     public static function getRecordRouteBindingEloquentQuery(): Builder
