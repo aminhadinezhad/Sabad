@@ -203,27 +203,32 @@
 
     /* The name on a ribbon in sabad's blue: it comes out 6px past the card's edge and folds
        back behind it (the darker triangle), its other end cut into a notch, like a ribbon wrapped
-       round a box. The shadow takes the ribbon's shape, notch and fold. */
+       round a box. A sheen from the top edge down makes it read as satin rather than flat paint;
+       white on this blue reads at better than 8:1. Slim, and high on the picture, so it covers
+       as little of the photo as it can. The shadow takes the ribbon's shape, notch and fold. */
     .bundle-card__ribbon {
         position: absolute;
-        top: 22px;
+        top: 18px;
         right: -6px;
         z-index: 1;
         max-width: calc(100% - 20px);
         margin: 0;
-        filter: drop-shadow(0 3px 4px rgba(10, 30, 80, 0.3));
+        filter: drop-shadow(0 2px 3px rgba(9, 28, 74, 0.32));
     }
 
     .bundle-card__ribbon span {
         display: block;
-        padding-block: 6px;
-        padding-inline: 14px 22px;
-        background: linear-gradient(180deg, #2a5cc0 0%, #164194 100%);
-        clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 10px 50%);
+        padding-block: 5px;
+        padding-inline: 12px 20px;
+        background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.06) 45%, rgba(0, 0, 0, 0.08) 100%),
+            #1a4aa8;
+        clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 9px 50%);
         color: #fff;
         font-size: 13px;
         font-weight: 700;
-        line-height: 1.45;
+        line-height: 1.5;
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
     }
 
     .bundle-card__ribbon::after {
@@ -231,7 +236,7 @@
         position: absolute;
         right: 0;
         bottom: -6px;
-        border-top: 6px solid #0c275e;
+        border-top: 6px solid #0b2a63;
         border-right: 6px solid transparent;
     }
 
