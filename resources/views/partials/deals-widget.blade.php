@@ -126,7 +126,6 @@
             rgb(245, 172, 100) 65%,
             rgb(253, 228, 202) 100%
         );
-        box-shadow: 0 8px 22px -12px rgba(150, 70, 0, 0.55);
     }
 
     /* one row that scrolls sideways, the next card cut at the left edge, so there is plainly more
