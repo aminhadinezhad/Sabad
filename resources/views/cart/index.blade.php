@@ -603,7 +603,7 @@
     <!-- لوگو -->
     <nav class="px-3 pt-3 d-flex justify-content-center align-items-center">
         <a href="{{ route('products.index') }}" class="site-header__logo">
-            <img src="{{ asset('assets/images/TopLogo-01.png') }}" alt="لوگو فروشگاه">
+            <img src="{{ asset('assets/images/TopLogo-01.png') }}?v=20261005" alt="لوگو فروشگاه">
         </a>
     </nav>
 
