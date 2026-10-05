@@ -595,7 +595,8 @@
             const targetId = params.get('scrollTo');
             if (!targetId) return;
 
-            const target = document.getElementById(targetId);
+            // «سبد اختصاصی» (deals) is not on the page when there are no bundles: the products then
+            const target = document.getElementById(targetId) || (targetId === 'deals' ? document.getElementById('products-section') : null);
             if (!target) return;
 
             // پاک کردن پارامتر از آدرس بدون رفرش صفحه

@@ -19,10 +19,12 @@
     ];
 @endphp
 <style>
+    /* «شروع کنید» in the guide and «مشاهده محصولات» in the cart scroll here (id deals) */
     .deals {
         position: relative;
         padding: 0 16px;
         margin-top: 20px;
+        scroll-margin-top: 16px;
     }
 
     /* the title is on the sign in the picture; this one is for screen readers */
@@ -302,7 +304,7 @@
 </style>
 
 @if ($bundles->isNotEmpty())
-<section class="deals" aria-labelledby="deals-title">
+<section class="deals" id="deals" aria-labelledby="deals-title">
     <h2 class="deals__title" id="deals-title">سبد اختصاصی</h2>
     <div class="deals__awning" aria-hidden="true">
         <img src="{{ asset('assets/images/deals/awning-sabad.webp') }}" alt="" width="2000" height="404">

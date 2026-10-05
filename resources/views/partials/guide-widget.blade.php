@@ -500,10 +500,11 @@
             if (e.key === 'Escape' && sheet.classList.contains('is-open')) close();
         });
 
-        // «شروع کنید»: the guide closes and the products come into view
+        // «شروع کنید»: the guide closes and «سبد اختصاصی» comes into view (the products, when
+        // there are no bundles to show)
         sheet.querySelector('[data-guide-start]').addEventListener('click', () => {
             close();
-            document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            (document.getElementById('deals') || document.getElementById('products-section'))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
 
         // Pulled down, the sheet follows the finger (or the mouse) and the shade behind it fades as
