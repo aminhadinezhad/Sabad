@@ -33,7 +33,6 @@
     @include('partials.header')
     @include('partials.guide-widget')
     @include('partials.services-widget')
-    @include('partials.call-widget')
     @include('partials.deals-widget')
 
     <style>
@@ -465,6 +464,9 @@
 </div>
 
 </section>
+
+    {{-- prices follow the market: the note and the number, after the last product --}}
+    @include('partials.price-note')
 
     </div> <!-- بستن mobile-viewport -->
 

@@ -1,10 +1,18 @@
-{{-- Above the first prices on the page («سبد اختصاصی» comes next): prices follow the market, so
-     the final one is the experts' to give, and the Tamin Falat number under it dials them with a
-     tap. One card, in the look of the guide card above. --}}
+{{-- Prices follow the market, so the final one is the experts' to give, and the Tamin Falat number
+     under the note dials them with a tap. Under the cart's total, where the amount is decided
+     ($place = 'cart': one of the cart's cards, a thin border and no shadow), and at the end of the
+     products for whoever has looked through them all (in the look of the guide card). --}}
+@php($place = $place ?? 'home')
 <style>
+    /* the last thing on the home page: room under it, so the bottom bar never touches it */
     .price-note {
         padding: 0 16px;
-        margin-top: 16px;
+        margin: 16px 0 20px;
+    }
+
+    .price-note--cart {
+        padding: 0;
+        margin: 0 0 16px;
     }
 
     .price-note__card {
@@ -13,6 +21,11 @@
         box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
         padding: 16px 16px 14px;
         text-align: center;
+    }
+
+    .price-note--cart .price-note__card {
+        border: 1px solid #eee;
+        box-shadow: none;
     }
 
     .price-note__text {
@@ -60,7 +73,7 @@
     }
 </style>
 
-<section class="price-note">
+<section class="price-note price-note--{{ $place }}">
     <div class="price-note__card">
         <p class="price-note__text">
             <svg class="price-note__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r="0.6" fill="currentColor"/></svg>

@@ -647,6 +647,9 @@
                 <div class="vat-row" id="vatAmount" style="display:none;"></div>
             </div>
 
+            <!-- قیمت نهایی: زیر جمع کل، با شماره تماس -->
+            @include('partials.price-note', ['place' => 'cart'])
+
             <!-- تعداد کارمندان: ضرب سریع تعداد همه کالاها -->
             <div class="multiplier-card">
                 <p class="multiplier-card__label">تعداد کارمندان</p>
