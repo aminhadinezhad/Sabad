@@ -33,6 +33,7 @@
     @include('partials.header')
     @include('partials.guide-widget')
     @include('partials.services-widget')
+    @include('partials.call-widget')
     @include('partials.deals-widget')
 
     <style>
