@@ -79,11 +79,8 @@ class UserResource extends Resource
     /** Why $record may not be deleted by whoever is signed in, or null when it may. */
     public static function deletionRefusal(User $record): ?string
     {
-        return match (true) {
-            $record->is(Filament::auth()->user()) => 'حساب خودتان را نمی توانید حذف کنید.', // خودشو نتونه حذف کنه
-            (bool) $record->is_super_admin => 'این ادمین را نمی توان حذف کرد.',
-            default => null,
-        };
+        // anyone may delete their own account, but a super admin is never deleted
+        return $record->is_super_admin ? 'این ادمین را نمی توان حذف کرد.' : null;
     }
 
     /** A delete button that asks for confirmation only when the deletion may go ahead. */

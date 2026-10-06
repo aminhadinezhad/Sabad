@@ -97,7 +97,19 @@ class SuperAdminTest extends TestCase
         $this->assertNull($plain->fresh());
     }
 
-    public function test_no_one_deletes_themselves_and_a_super_admin_is_never_deleted(): void
+    public function test_an_admin_may_delete_their_own_account(): void
+    {
+        $admin = $this->admin([], 'access_admins');
+        $this->actingAs($admin);
+
+        Livewire::test(ListUsers::class)
+            ->assertTableActionVisible('delete', $admin)
+            ->callTableAction('delete', $admin);
+
+        $this->assertNull($admin->fresh());
+    }
+
+    public function test_a_super_admin_is_never_deleted_not_even_by_themselves(): void
     {
         $boss = $this->superAdmin();
         $this->actingAs($boss);
@@ -105,7 +117,7 @@ class SuperAdminTest extends TestCase
         Livewire::test(ListUsers::class)
             ->assertTableActionVisible('delete', $boss)
             ->callTableAction('delete', $boss)
-            ->assertNotified('حساب خودتان را نمی توانید حذف کنید.');
+            ->assertNotified('این ادمین را نمی توان حذف کرد.');
         $this->assertNotNull($boss->fresh());
 
         // and not even from code
