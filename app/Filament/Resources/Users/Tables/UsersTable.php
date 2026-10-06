@@ -23,7 +23,6 @@ class UsersTable
             ->columns([
                 TextColumn::make('name')
                     ->label('نام ادمین')
-                    ->description(fn (User $record) => $record->is_super_admin ? 'مدیر کل' : null)
                     ->searchable(),
 
                 TextColumn::make('email')
