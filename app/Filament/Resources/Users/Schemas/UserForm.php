@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Users\Schemas;
 
-use App\Models\User;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
@@ -35,12 +34,9 @@ class UserForm
                             ->required()
                             ->helperText('شماره همراه باید با 09 شروع شود و 11 رقم باشد.'),
 
-                        // a super admin always gets in and may do everything: the switch and the
-                        // permissions below do not apply to them
                         Toggle::make('has_access')
                             ->label('دسترسی دارد؟')
                             ->default(true)
-                            ->hidden(fn (?User $record) => $record?->is_super_admin ?? false)
                             ->helperText('در صورت عدم وجود تیک، امکان ورود به سایت را نخواهد داشت.'),
 
                         FileUpload::make('avatar')
@@ -53,7 +49,6 @@ class UserForm
 
                 Section::make('نقش‌ها')
                     ->description('به چه فرم‌ها/بخش‌هایی دسترسی دارد؟')
-                    ->hidden(fn (?User $record) => $record?->is_super_admin ?? false)
                     ->components([
                         CheckboxList::make('permissions')
                             ->label('دسترسی‌های کاربر')

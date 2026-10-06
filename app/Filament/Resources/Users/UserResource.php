@@ -9,29 +9,21 @@ use App\Filament\Resources\Users\Schemas\UserForm;
 use App\Filament\Resources\Users\Tables\UsersTable;
 use App\Models\User;
 use BackedEnum;
-use Filament\Actions\DeleteAction;
+use UnitEnum;
 use Filament\Facades\Filament;
-use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use UnitEnum;
 
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
-
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserCircle;
-
     protected static ?string $recordTitleAttribute = 'name';
-
     protected static string|UnitEnum|null $navigationGroup = 'مدیریت سیستم';
-
     protected static ?string $modelLabel = 'ادمین';
-
     protected static ?string $pluralModelLabel = 'ادمین‌ ها';
-
     protected static ?string $navigationLabel = 'ادمین‌ ها';
 
     public static function form(Schema $schema): Schema
@@ -59,42 +51,17 @@ class UserResource extends Resource
         return Filament::auth()->user()?->can('access_admins') ?? false;
     }
 
-    /** A super admin's account is edited by no one but themselves. */
     public static function canEdit($record): bool
-    {
-        return $record->isManageableBy(Filament::auth()->user());
-    }
-
-    /** No one deletes themselves, and no one deletes a super admin. */
-    /**
-     * The delete button shows on every row, so a super admin's row looks like the rest; what may
-     * not be deleted is refused with a message when it is clicked (guardDeletion), and the model
-     * itself never lets a super admin go.
-     */
-    public static function canDelete($record): bool
     {
         return Filament::auth()->user()?->can('access_admins') ?? false;
     }
 
-    /** Why $record may not be deleted by whoever is signed in, or null when it may. */
-    public static function deletionRefusal(User $record): ?string
+    public static function canDelete($record): bool
     {
-        // anyone may delete their own account, but a super admin is never deleted
-        return $record->is_super_admin ? 'این ادمین را نمی توان حذف کرد.' : null;
-    }
+        $currentUser = Filament::auth()->user();
 
-    /** A delete button that asks for confirmation only when the deletion may go ahead. */
-    public static function guardDeletion(DeleteAction $action): DeleteAction
-    {
-        return $action
-            // a refused deletion opens no confirmation box: the click goes straight to the message
-            ->modalHidden(fn (User $record): bool => static::deletionRefusal($record) !== null)
-            ->before(function (DeleteAction $action, User $record): void {
-                if ($why = static::deletionRefusal($record)) {
-                    Notification::make()->title($why)->danger()->send();
-                    $action->cancel();
-                }
-            });
+        return $currentUser?->can('access_admins')
+            && $currentUser->id !== $record->id; // خودشو نتونه حذف کنه
     }
 
     public static function getRelations(): array

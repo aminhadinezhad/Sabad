@@ -13,7 +13,7 @@ class EditUser extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            UserResource::guardDeletion(DeleteAction::make()),
+            DeleteAction::make(),
         ];
     }
 }
