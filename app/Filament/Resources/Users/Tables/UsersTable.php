@@ -2,10 +2,12 @@
 
 namespace App\Filament\Resources\Users\Tables;
 
+use App\Models\User;
 use App\Support\PersianDate;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Facades\Filament;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\IconColumn;
@@ -21,6 +23,7 @@ class UsersTable
             ->columns([
                 TextColumn::make('name')
                     ->label('نام ادمین')
+                    ->description(fn (User $record) => $record->is_super_admin ? 'مدیر کل' : null)
                     ->searchable(),
 
                 TextColumn::make('email')
@@ -40,8 +43,10 @@ class UsersTable
                     ->formatStateUsing(fn ($state) => PersianDate::date($state))
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            // a super admin's row shows no actions to anyone else (UserResource also refuses them)
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()
+                    ->visible(fn (User $record) => $record->isManageableBy(Filament::auth()->user())),
 
                 Action::make('resetPassword')
                     ->label('پسورد ریست')
@@ -61,6 +66,8 @@ class UsersTable
                             ->required()
                             ->same('password'),
                     ])
+                    // a super admin's password is theirs alone
+                    ->visible(fn (User $record) => $record->isManageableBy(Filament::auth()->user()))
                     ->action(function (array $data, $record) {
                         $record->update([
                             'password' => Hash::make($data['password']),
@@ -73,7 +80,8 @@ class UsersTable
                     })
                     ->modalSubmitActionLabel('ثبت'),
 
-                DeleteAction::make(),
+                DeleteAction::make()
+                    ->visible(fn (User $record) => $record->isManageableBy(Filament::auth()->user()) && ! $record->is(Filament::auth()->user())),
             ]);
     }
 }

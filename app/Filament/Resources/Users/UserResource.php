@@ -9,21 +9,27 @@ use App\Filament\Resources\Users\Schemas\UserForm;
 use App\Filament\Resources\Users\Tables\UsersTable;
 use App\Models\User;
 use BackedEnum;
-use UnitEnum;
 use Filament\Facades\Filament;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserCircle;
+
     protected static ?string $recordTitleAttribute = 'name';
+
     protected static string|UnitEnum|null $navigationGroup = 'مدیریت سیستم';
+
     protected static ?string $modelLabel = 'ادمین';
+
     protected static ?string $pluralModelLabel = 'ادمین‌ ها';
+
     protected static ?string $navigationLabel = 'ادمین‌ ها';
 
     public static function form(Schema $schema): Schema
@@ -51,16 +57,18 @@ class UserResource extends Resource
         return Filament::auth()->user()?->can('access_admins') ?? false;
     }
 
+    /** A super admin's account is edited by no one but themselves. */
     public static function canEdit($record): bool
     {
-        return Filament::auth()->user()?->can('access_admins') ?? false;
+        return $record->isManageableBy(Filament::auth()->user());
     }
 
+    /** No one deletes themselves, and no one deletes a super admin. */
     public static function canDelete($record): bool
     {
         $currentUser = Filament::auth()->user();
 
-        return $currentUser?->can('access_admins')
+        return $record->isManageableBy($currentUser)
             && $currentUser->id !== $record->id; // خودشو نتونه حذف کنه
     }
 
