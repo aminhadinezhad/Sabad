@@ -62,6 +62,13 @@ class UsersTable
                             ->same('password'),
                     ])
                     ->action(function (array $data, $record) {
+                        // the owner's password is changed by its owner alone
+                        if ($record->isOwnerAccountFor(auth()->user())) {
+                            Notification::make()->title('امکان تغییر رمز عبور این ادمین وجود ندارد.')->danger()->send();
+
+                            return;
+                        }
+
                         $record->update([
                             'password' => Hash::make($data['password']),
                         ]);
@@ -73,7 +80,18 @@ class UsersTable
                     })
                     ->modalSubmitActionLabel('ثبت'),
 
-                DeleteAction::make(),
+                self::guardOwnerDeletion(DeleteAction::make()),
             ]);
+    }
+
+    /** The owner's account is deleted by its owner alone: anyone else, on confirming, gets an error. */
+    public static function guardOwnerDeletion(DeleteAction $action): DeleteAction
+    {
+        return $action->before(function (DeleteAction $action, $record) {
+            if ($record->isOwnerAccountFor(auth()->user())) {
+                Notification::make()->title('امکان حذف این ادمین وجود ندارد.')->danger()->send();
+                $action->cancel();
+            }
+        });
     }
 }
