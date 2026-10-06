@@ -1,34 +1,72 @@
-{{-- The Tamin Falat logo between the three services and «سبد اختصاصی»: a tap on it dials the
-     office (the number on taminfalat.com). The drawing is the designer's file as it came, its
-     empty margin trimmed by the viewBox. --}}
+{{-- Above the first prices on the page («سبد اختصاصی» comes next): prices follow the market, so
+     the final one is the experts' to give, and the Tamin Falat number under it dials them with a
+     tap. One card, in the look of the guide card above. --}}
 <style>
-    .call-us {
-        display: flex;
-        justify-content: center;
+    .price-note {
         padding: 0 16px;
         margin-top: 16px;
     }
 
-    .call-us__link {
+    .price-note__card {
+        background-color: var(--brand-white);
+        border-radius: var(--radius-lg);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+        padding: 16px 16px 14px;
+        text-align: center;
+    }
+
+    .price-note__text {
+        margin: 0 auto;
+        max-width: 420px;
+        font-size: 13px;
+        line-height: 1.9;
+        color: #555;
+        text-wrap: balance;
+    }
+
+    .price-note__icon {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        margin-left: 4px;
+        vertical-align: -3px;
+        color: var(--brand-complementary);
+    }
+
+    .price-note__text strong {
+        font-weight: 700;
+        color: var(--brand-primary);
+    }
+
+    /* the number: a thin rule above it, the drawing itself is the button */
+    .price-note__call {
         display: block;
-        width: min(78%, 340px);
+        width: min(80%, 300px);
+        margin: 12px auto 0;
+        padding-top: 12px;
+        border-top: 1px dashed #dfe3ec;
         -webkit-tap-highlight-color: transparent;
         transition: transform 0.15s ease;
     }
 
-    .call-us__link:active {
+    .price-note__call:active {
         transform: scale(0.97);
     }
 
-    .call-us__link svg {
+    .price-note__call svg {
         display: block;
         width: 100%;
         height: auto;
     }
 </style>
 
-<section class="call-us">
-    <a class="call-us__link" href="tel:02191001214" aria-label="تماس با تامین فلات: ۰۲۱۹۱۰۰۱۲۱۴">
+<section class="price-note">
+    <div class="price-note__card">
+        <p class="price-note__text">
+            <svg class="price-note__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r="0.6" fill="currentColor"/></svg>
+            قیمت ها ممکن است با توجه به نوسانات بازار تغییر کنند. برای <strong>قیمت نهایی</strong>، با کارشناسان تأمین فلات در ارتباط باشید.
+        </p>
+        <a class="price-note__call" href="tel:02191001214" aria-label="تماس با کارشناسان تأمین فلات: ۰۲۱۹۱۰۰۱۲۱۴">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="28 48 560 155" aria-hidden="true" focusable="false">
 <g>
 	<g>
@@ -208,5 +246,6 @@
 	</g>
 </g>
         </svg>
-    </a>
+        </a>
+    </div>
 </section>
