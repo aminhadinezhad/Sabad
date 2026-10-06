@@ -73,8 +73,7 @@ class UsersTable
                     })
                     ->modalSubmitActionLabel('ثبت'),
 
-                DeleteAction::make()
-                    ->failureNotificationTitle('این ادمین را نمی توان حذف کرد.'),
+                DeleteAction::make(),
             ]);
     }
 }
