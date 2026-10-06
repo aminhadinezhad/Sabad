@@ -121,6 +121,19 @@
             transition: 0.2s ease;
         }
 
+        /* On a phone every tap counts: no double-tap zoom swallowing a quick second tap (the page
+           can still be pinched), no grey flash; a press shows as the button giving a little. */
+        .product-card__add-btn,
+        .qty-pill__btn {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .product-card__add-btn:active,
+        .qty-pill__btn:active {
+            transform: scale(0.92);
+        }
+
         .product-card__add-btn::after,
         .qty-pill__btn::after {
             /* the buttons look 30px but answer a 44px touch, the size phones recommend for a finger */
@@ -129,13 +142,16 @@
             inset: -7px;
         }
 
-        .product-card__add-btn:hover {
-            background-color: rgb(255, 94, 31);
-            color: rgb(255, 255, 255);
-        }
+        /* the orange hover only with a mouse: on a phone a tap would leave it stuck on */
+        @media (hover: hover) and (pointer: fine) {
+            .product-card__add-btn:hover {
+                background-color: rgb(255, 94, 31);
+                color: rgb(255, 255, 255);
+            }
 
-        .product-card__add-btn:hover svg {
-            stroke: rgb(255, 255, 255);
+            .product-card__add-btn:hover svg {
+                stroke: rgb(255, 255, 255);
+            }
         }
 
         /* expanded state: trash/minus - qty - plus, same pattern as the cart page */
@@ -158,6 +174,7 @@
             justify-content: center;
             color: rgb(255, 94, 31);
             cursor: pointer;
+            transition: transform 0.15s ease;
         }
 
         .qty-pill__btn.trash {

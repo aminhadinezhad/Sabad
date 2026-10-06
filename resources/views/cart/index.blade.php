@@ -231,13 +231,16 @@
         inset: -14px;
     }
 
-    .cart-item__remove:hover {
-        background-color: rgb(255, 94, 31);
-        color: rgb(255, 255, 255);
-    }
+    /* the orange hover only with a mouse: on a phone a tap would leave it stuck on */
+    @media (hover: hover) and (pointer: fine) {
+        .cart-item__remove:hover {
+            background-color: rgb(255, 94, 31);
+            color: rgb(255, 255, 255);
+        }
 
-    .cart-item__remove:hover svg {
-        stroke: rgb(255, 255, 255);
+        .cart-item__remove:hover svg {
+            stroke: rgb(255, 255, 255);
+        }
     }
 
     .qty-control {
