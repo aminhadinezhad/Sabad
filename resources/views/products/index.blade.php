@@ -122,16 +122,11 @@
         }
 
         /* On a phone every tap counts: no double-tap zoom swallowing a quick second tap (the page
-           can still be pinched), no grey flash; a press shows as the button giving a little. */
+           can still be pinched), and no grey flash. */
         .product-card__add-btn,
         .qty-pill__btn {
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
-        }
-
-        .product-card__add-btn:active,
-        .qty-pill__btn:active {
-            transform: scale(0.92);
         }
 
         .product-card__add-btn::after,
@@ -174,7 +169,6 @@
             justify-content: center;
             color: rgb(255, 94, 31);
             cursor: pointer;
-            transition: transform 0.15s ease;
         }
 
         .qty-pill__btn.trash {
