@@ -18,6 +18,12 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
 {
     use HasFactory, HasRoles, Notifiable;
 
+    protected static function booted(): void
+    {
+        // a super admin is never deleted, whatever asks for it
+        static::deleting(fn (User $user) => ! $user->is_super_admin);
+    }
+
     /** A super admin always gets in, whatever their access switch says. */
     public function canAccessPanel(Panel $panel): bool
     {

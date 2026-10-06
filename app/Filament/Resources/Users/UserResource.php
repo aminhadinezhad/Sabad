@@ -9,7 +9,9 @@ use App\Filament\Resources\Users\Schemas\UserForm;
 use App\Filament\Resources\Users\Tables\UsersTable;
 use App\Models\User;
 use BackedEnum;
+use Filament\Actions\DeleteAction;
 use Filament\Facades\Filament;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -64,12 +66,38 @@ class UserResource extends Resource
     }
 
     /** No one deletes themselves, and no one deletes a super admin. */
+    /**
+     * The delete button shows on every row, so a super admin's row looks like the rest; what may
+     * not be deleted is refused with a message when it is clicked (guardDeletion), and the model
+     * itself never lets a super admin go.
+     */
     public static function canDelete($record): bool
     {
-        $currentUser = Filament::auth()->user();
+        return Filament::auth()->user()?->can('access_admins') ?? false;
+    }
 
-        return $record->isManageableBy($currentUser)
-            && $currentUser->id !== $record->id; // خودشو نتونه حذف کنه
+    /** Why $record may not be deleted by whoever is signed in, or null when it may. */
+    public static function deletionRefusal(User $record): ?string
+    {
+        return match (true) {
+            $record->is(Filament::auth()->user()) => 'حساب خودتان را نمی توانید حذف کنید.', // خودشو نتونه حذف کنه
+            (bool) $record->is_super_admin => 'این ادمین را نمی توان حذف کرد.',
+            default => null,
+        };
+    }
+
+    /** A delete button that asks for confirmation only when the deletion may go ahead. */
+    public static function guardDeletion(DeleteAction $action): DeleteAction
+    {
+        return $action
+            // a refused deletion opens no confirmation box: the click goes straight to the message
+            ->modalHidden(fn (User $record): bool => static::deletionRefusal($record) !== null)
+            ->before(function (DeleteAction $action, User $record): void {
+                if ($why = static::deletionRefusal($record)) {
+                    Notification::make()->title($why)->danger()->send();
+                    $action->cancel();
+                }
+            });
     }
 
     public static function getRelations(): array

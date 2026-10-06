@@ -69,16 +69,47 @@ class SuperAdminTest extends TestCase
 
         $this->get('/admin/users/'.$boss->getRouteKey().'/edit')->assertForbidden();
 
+        // the row looks like any other: edit, password reset and delete are all there
         Livewire::test(ListUsers::class)
+            ->assertTableActionVisible('editLocked', $boss)
+            ->assertTableActionVisible('resetPasswordLocked', $boss)
+            ->assertTableActionVisible('delete', $boss)
             ->assertTableActionHidden('edit', $boss)
             ->assertTableActionHidden('resetPassword', $boss)
-            ->assertTableActionHidden('delete', $boss)
             // everyone else as before
             ->assertTableActionVisible('edit', $plain)
             ->assertTableActionVisible('resetPassword', $plain)
-            ->assertTableActionVisible('delete', $plain);
+            ->assertTableActionVisible('delete', $plain)
+            ->assertTableActionHidden('editLocked', $plain);
 
+        // but each only says it cannot be done
+        $password = $boss->fresh()->password;
+        Livewire::test(ListUsers::class)->callTableAction('editLocked', $boss)->assertNotified('این ادمین را نمی توان ویرایش کرد.');
+        Livewire::test(ListUsers::class)->callTableAction('resetPasswordLocked', $boss)->assertNotified('رمز عبور این ادمین را نمی توان تغییر داد.');
+        Livewire::test(ListUsers::class)->callTableAction('delete', $boss)->assertNotified('این ادمین را نمی توان حذف کرد.');
+
+        $this->assertNotNull($boss->fresh());
         $this->assertTrue($boss->fresh()->is_super_admin);
+        $this->assertSame($password, $boss->fresh()->password);
+
+        // an ordinary admin is deleted as before
+        Livewire::test(ListUsers::class)->callTableAction('delete', $plain);
+        $this->assertNull($plain->fresh());
+    }
+
+    public function test_no_one_deletes_themselves_and_a_super_admin_is_never_deleted(): void
+    {
+        $boss = $this->superAdmin();
+        $this->actingAs($boss);
+
+        Livewire::test(ListUsers::class)
+            ->assertTableActionVisible('delete', $boss)
+            ->callTableAction('delete', $boss)
+            ->assertNotified('حساب خودتان را نمی توانید حذف کنید.');
+        $this->assertNotNull($boss->fresh());
+
+        // and not even from code
+        $boss->delete();
         $this->assertNotNull($boss->fresh());
     }
 
