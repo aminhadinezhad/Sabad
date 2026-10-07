@@ -1,7 +1,7 @@
 {{-- Prices follow the market, so the final one is the experts' to give, and the Tamin Falat number
-     under the note dials them with a tap. Under the cart's total, where the amount is decided
-     ($place = 'cart': one of the cart's cards, a thin border and no shadow), and at the end of the
-     products for whoever has looked through them all (in the look of the guide card). --}}
+     under the note dials them with a tap. The last thing in the cart, under «ادامه ثبت سفارش»
+     ($place = 'cart'), and at the end of the products on the home page. No card around it: the
+     text and the number sit on the page itself. --}}
 @php($place = $place ?? 'home')
 <style>
     /* the last thing on the home page: room under it, so the bottom bar never touches it */
@@ -10,22 +10,15 @@
         margin: 16px 0 20px;
     }
 
+    /* in the cart its own container already gives the gutter */
     .price-note--cart {
         padding: 0;
         margin: 0 0 16px;
     }
 
     .price-note__card {
-        background-color: var(--brand-white);
-        border-radius: var(--radius-lg);
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-        padding: 16px 16px 14px;
+        padding: 4px 0 0;
         text-align: center;
-    }
-
-    .price-note--cart .price-note__card {
-        border: 1px solid #eee;
-        box-shadow: none;
     }
 
     .price-note__text {

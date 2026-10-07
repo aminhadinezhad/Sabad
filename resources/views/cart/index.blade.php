@@ -647,9 +647,6 @@
                 <div class="vat-row" id="vatAmount" style="display:none;"></div>
             </div>
 
-            <!-- قیمت نهایی: زیر جمع کل، با شماره تماس -->
-            @include('partials.price-note', ['place' => 'cart'])
-
             <!-- تعداد کارمندان: ضرب سریع تعداد همه کالاها -->
             <div class="multiplier-card">
                 <p class="multiplier-card__label">تعداد کارمندان</p>
@@ -679,6 +676,9 @@
             <div class="d-flex flex-column gap-2 mb-4">
                 <button type="button" class="btn-continue" id="openOrderModalBtn">ادامه ثبت سفارش</button>
             </div>
+
+            <!-- قیمت نهایی: آخر سبد، زیر دکمه، با شماره تماس -->
+            @include('partials.price-note', ['place' => 'cart'])
         </div>
     </div>
 
