@@ -8,6 +8,8 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Support\PersianDate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class OrderController extends Controller
 {
@@ -16,46 +18,54 @@ class OrderController extends Controller
         // ۱. اعتبارسنجی اطلاعات ورودی
         $validated = $this->validateOrderRequest($request);
 
-        // ۲. پیدا کردن یا ساختن مشتری بر اساس شماره تلفن
-        // A customer deleted in the panel keeps its row, and the phone is unique: look among the
-        // deleted too and bring that one back, or the insert of a second row fails.
-        $customer = Customer::withTrashed()->firstOrNew(['phone' => $validated['phone']]);
-        $customer->fill([
-            'full_name' => $validated['full_name'],
-            'address' => $validated['address'] ?? null,
-        ]);
-        if ($customer->trashed()) {
-            $customer->deleted_at = null;
-        }
-        $customer->save();
-
-        // ۳. محاسبه‌ی جمع کل قیمت (شامل مالیات و ارزش‌افزوده)
-        $totalPrice = collect($validated['items'])->sum(function ($item) {
-            return $item['quantity'] * $item['unit_price'] + ($item['vat_amount'] ?? 0);
-        });
-
-        // ۴. ساخت سفارش
-        $order = Order::create([
-            'customer_id' => $customer->id,
-            'tracking_code' => '0',
-            'total_price' => $totalPrice,
-            'status' => 'pending',
-        ]);
-
-        // به‌روز‌رسانی tracking_code با order ID
-        $order->update(['tracking_code' => (string) $order->id]);
-
-        // ۵. ذخیره‌ی آیتم‌های سفارش
-        foreach ($validated['items'] as $item) {
-            OrderItem::create([
-                'order_id' => $order->id,
-                'product_name' => $item['product_name'],
-                'product_code' => $item['product_code'] ?? null,
-                'quantity' => $item['quantity'],
-                'unit_price' => $item['unit_price'],
-                'vat_amount' => $item['vat_amount'] ?? 0,
+        // The customer, the order and its items go in together or not at all: a failure half way
+        // leaves nothing behind.
+        $order = DB::transaction(function () use ($validated) {
+            // ۲. پیدا کردن یا ساختن مشتری بر اساس شماره تلفن
+            // A customer deleted in the panel keeps its row, and the phone is unique: look among the
+            // deleted too and bring that one back, or the insert of a second row fails.
+            $customer = Customer::withTrashed()->firstOrNew(['phone' => $validated['phone']]);
+            $customer->fill([
+                'full_name' => $validated['full_name'],
+                'address' => $validated['address'] ?? null,
             ]);
-        }
+            if ($customer->trashed()) {
+                $customer->deleted_at = null;
+            }
+            $customer->save();
+
+            // ۳. محاسبه‌ی جمع کل قیمت (شامل مالیات و ارزش‌افزوده)
+            $totalPrice = collect($validated['items'])->sum(function ($item) {
+                return $item['quantity'] * $item['unit_price'] + ($item['vat_amount'] ?? 0);
+            });
+
+            // ۴. ساخت سفارش
+            // The tracking code is the order's id, known only once the row is in. Until then a
+            // placeholder of its own, so two orders at the same moment never share one (it is unique).
+            $order = Order::create([
+                'customer_id' => $customer->id,
+                'tracking_code' => 'pending-'.Str::uuid(),
+                'total_price' => $totalPrice,
+                'status' => 'pending',
+            ]);
+
+            // به‌روز‌رسانی tracking_code با order ID
+            $order->update(['tracking_code' => (string) $order->id]);
+
+            // ۵. ذخیره‌ی آیتم‌های سفارش
+            foreach ($validated['items'] as $item) {
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_name' => $item['product_name'],
+                    'product_code' => $item['product_code'] ?? null,
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                    'vat_amount' => $item['vat_amount'] ?? 0,
+                ]);
+            }
+
+            return $order;
+        });
 
         // ۶. ریدایرکت به صفحه‌ی موفقیت
         return redirect()->to($order->successUrl());
