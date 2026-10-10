@@ -40,7 +40,7 @@ class CustomersTable
                     ->modalHeading(
                         fn (Customer $record): string => "حذف {$record->full_name}"
                     )
-                    ->modalDescription('آیا برای انجام این کار مطمئن هستید؟')
+                    ->modalDescription(fn (Customer $record): string => $record->deletionWarning())
                     ->modalSubmitActionLabel('حذف')
                     ->modalCancelActionLabel('لغو'),
             ])
