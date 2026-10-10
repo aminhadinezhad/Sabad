@@ -9,6 +9,7 @@ use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Livewire\WithFileUploads;
@@ -231,6 +232,10 @@ class OnlineStoreRoutines extends Page
     {
         $productIds = Product::singles()->pluck('id')->flip();
         $bundleIds = Product::bundles()->pluck('id')->flip();
+        // a row's name must be its id's: a file numbered by hand (or copied from an older one) puts
+        // the prices on the wrong products the moment one id is off
+        $names = Product::query()->pluck('name', 'id');
+        $idsByName = $names->mapWithKeys(fn (string $name, int $id) => [self::comparableName($name) => $id]);
         $prices = [];
         $skippedRows = [];
         $errors = [];
@@ -249,9 +254,14 @@ class OnlineStoreRoutines extends Page
             $rial = $this->toInteger($formula === false ? $rawPrice : $formula);
             $price = $rial === null ? null : (int) round($rial / self::RIAL_PER_TOMAN);
             $label = 'سطر '.PersianHelper::toPersianDigits($number).': ';
+            $rawName = $cells[2] ?? null;
+            $name = is_string($rawName) || is_numeric($rawName) ? trim((string) $rawName) : '';
+            $mismatch = $id !== null && $name !== '' ? $this->nameMismatch($id, $name, $names, $idsByName) : null;
 
             if ($id === null) {
                 $errors[] = $label.'کد یونیک محصول در ستون اول باید عدد باشد.';
+            } elseif ($mismatch !== null) {
+                $errors[] = $label.$mismatch;
             } elseif ($bundleIds->has($id)) {
                 // a bundle's price comes from its products, whatever this row says, even an error
                 $bundleRows[] = $number;
@@ -300,6 +310,42 @@ class OnlineStoreRoutines extends Page
         $value = str_replace([',', '٬', '،', ' '], '', PersianHelper::toEnglishDigits(trim($value)));
 
         return ctype_digit($value) ? (int) $value : null;
+    }
+
+    /**
+     * Why a row's id and name do not go together, or null when they do (or the id is of a product
+     * deleted for good, whose row is skipped as before).
+     *
+     * @param  Collection<int, string>  $names  every product's name by id
+     * @param  Collection<string, int>  $idsByName  every id by comparable name
+     */
+    private function nameMismatch(int $id, string $name, $names, $idsByName): ?string
+    {
+        $owner = $idsByName[self::comparableName($name)] ?? null;
+
+        if ($names->has($id)) {
+            if (self::comparableName($names[$id]) === self::comparableName($name)) {
+                return null;
+            }
+
+            return 'کد یونیک '.PersianHelper::toPersianDigits((string) $id).' در سبد مال «'.$names[$id].'» است، ولی نام این سطر «'.$name.'» است'
+                .($owner !== null ? '؛ کد یونیک «'.$name.'» در سبد '.PersianHelper::toPersianDigits((string) $owner).' است' : '')
+                .'. فایل را دوباره از همین صفحه دانلود کنید و قیمت ها را در آن وارد کنید.';
+        }
+
+        return $owner !== null
+            ? 'کالای «'.$name.'» در سبد کد یونیک '.PersianHelper::toPersianDigits((string) $owner).' دارد، نه '.PersianHelper::toPersianDigits((string) $id)
+                .'. فایل را دوباره از همین صفحه دانلود کنید و قیمت ها را در آن وارد کنید.'
+            : null;
+    }
+
+    /** A name as typed anywhere: Arabic or Persian ی and ک, half or double spaces, either digits. */
+    private static function comparableName(string $name): string
+    {
+        $name = str_replace(['ي', 'ى', 'ك', 'ۀ', 'ة', "\u{200C}", "\u{200D}", "\u{00A0}", 'ـ'], ['ی', 'ی', 'ک', 'ه', 'ه', ' ', '', ' ', ''], $name);
+        $name = (string) PersianHelper::toEnglishDigits($name);
+
+        return mb_strtolower(trim((string) preg_replace('/\s+/u', ' ', $name)));
     }
 
     private function isBlank(mixed $value): bool

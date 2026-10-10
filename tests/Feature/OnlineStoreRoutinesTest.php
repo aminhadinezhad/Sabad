@@ -270,6 +270,103 @@ class OnlineStoreRoutinesTest extends TestCase
         return UploadedFile::fake()->createWithContent('prices.xlsx', file_get_contents($path));
     }
 
+    public function test_a_file_numbered_one_off_after_a_deleted_product_changes_nothing_and_says_which_id_is_whose(): void
+    {
+        // as on the server: a product deleted in the middle, so the ids after it are one ahead of
+        // a list numbered 1, 2, 3 by hand
+        $this->actingAs($this->admin());
+        $gone = $this->product('روغن قدیمی حذف شده', 10000);
+        $palm = $this->product('روغن مایع سرخ کردنی بدون پالم 810 گرم فامیلا', 433500);
+        $oil = $this->product('روغن مایع سرخ کردنی 1620 گرم فامیلا', 864300);
+        $pasta = $this->product('ماکارانی رشته ای 700 گرمی زر ماکارون سایز 1.2', 92800);
+        $goneId = $gone->id;
+        $gone->delete();
+
+        Livewire::test(OnlineStoreRoutines::class)
+            ->set('excelFile', $this->excel([
+                [$goneId, $goneId, 'روغن مایع سرخ کردنی بدون پالم 810 گرم فامیلا', 4335000],
+                [$palm->id, $palm->id, 'روغن مایع سرخ کردنی 1620 گرم فامیلا', 8643000],
+                [$oil->id, $oil->id, 'ماکارانی رشته ای 700 گرمی زر ماکارون سایز 1.2', 928000],
+            ]))
+            ->call('importPrices')
+            ->assertSet('importErrors', [
+                'سطر ۲: کالای «روغن مایع سرخ کردنی بدون پالم 810 گرم فامیلا» در سبد کد یونیک '.$this->fa($palm->id).' دارد، نه '.$this->fa($goneId).'. فایل را دوباره از همین صفحه دانلود کنید و قیمت ها را در آن وارد کنید.',
+                'سطر ۳: کد یونیک '.$this->fa($palm->id).' در سبد مال «روغن مایع سرخ کردنی بدون پالم 810 گرم فامیلا» است، ولی نام این سطر «روغن مایع سرخ کردنی 1620 گرم فامیلا» است؛ کد یونیک «روغن مایع سرخ کردنی 1620 گرم فامیلا» در سبد '.$this->fa($oil->id).' است. فایل را دوباره از همین صفحه دانلود کنید و قیمت ها را در آن وارد کنید.',
+                'سطر ۴: کد یونیک '.$this->fa($oil->id).' در سبد مال «روغن مایع سرخ کردنی 1620 گرم فامیلا» است، ولی نام این سطر «ماکارانی رشته ای 700 گرمی زر ماکارون سایز 1.2» است؛ کد یونیک «ماکارانی رشته ای 700 گرمی زر ماکارون سایز 1.2» در سبد '.$this->fa($pasta->id).' است. فایل را دوباره از همین صفحه دانلود کنید و قیمت ها را در آن وارد کنید.',
+            ])
+            ->assertNotified('هیچ قیمتی تغییر نکرد');
+
+        // the macaroni's price never lands on the oil
+        $this->assertSame(433500, (int) $palm->fresh()->price);
+        $this->assertSame(864300, (int) $oil->fresh()->price);
+        $this->assertSame(92800, (int) $pasta->fresh()->price);
+    }
+
+    public function test_names_typed_a_little_differently_still_match(): void
+    {
+        $this->actingAs($this->admin());
+        $tea = $this->product('چای کیسه‌ای گلستان 100 عددی', 150000);
+        $sugar = $this->product('قند شکسته 900 گرمی', 90000);
+        $rice = $this->product('برنج هاشمی', 70000);
+
+        Livewire::test(OnlineStoreRoutines::class)
+            ->set('excelFile', $this->excel([
+                // Arabic ي and ك, a space for the half-space, Persian digits, extra spaces
+                [$tea->id, 'ندارد', '  چاي كيسه اي  گلستان ۱۰۰ عددی ', 1600000],
+                [$sugar->id, 'ندارد', 'قند شكسته ٩٠٠ گرمي', 950000],
+                // no name at all: checked by id alone, as before
+                [$rice->id, 'ندارد', '', 800000],
+            ]))
+            ->call('importPrices')
+            ->assertSet('importErrors', [])
+            ->assertNotified('قیمت‌ها بروزرسانی شد');
+
+        $this->assertSame(160000, (int) $tea->fresh()->price);
+        $this->assertSame(95000, (int) $sugar->fresh()->price);
+        $this->assertSame(80000, (int) $rice->fresh()->price);
+    }
+
+    public function test_an_id_of_a_bundle_with_a_products_name_is_a_mismatch_too(): void
+    {
+        $this->actingAs($this->admin());
+        $rice = $this->product('برنج هاشمی', 150000);
+        $bundle = Product::create(['name' => 'سبد اقتصادی', 'category' => Product::BUNDLE_CATEGORY, 'price' => 0, 'unit' => 'سبد']);
+
+        Livewire::test(OnlineStoreRoutines::class)
+            ->set('excelFile', $this->excel([[$bundle->id, 'ندارد', 'برنج هاشمی', 1750000]]))
+            ->call('importPrices')
+            ->assertSet('importErrors', [
+                'سطر ۲: کد یونیک '.$this->fa($bundle->id).' در سبد مال «سبد اقتصادی» است، ولی نام این سطر «برنج هاشمی» است؛ کد یونیک «برنج هاشمی» در سبد '.$this->fa($rice->id).' است. فایل را دوباره از همین صفحه دانلود کنید و قیمت ها را در آن وارد کنید.',
+            ]);
+
+        $this->assertSame(150000, (int) $rice->fresh()->price);
+    }
+
+    public function test_the_exported_file_imports_back_without_a_single_mismatch(): void
+    {
+        $this->actingAs($this->admin());
+        $this->product('برنج هاشمی', 150000);
+        $this->product('چای کیسه‌ای گلستان', 90000);
+        $gone = $this->product('کالای حذف شده', 1000);
+        $this->product('روغن 1620 گرم', 80000);
+        $gone->delete();
+
+        $export = Livewire::test(OnlineStoreRoutines::class)->call('exportPrices')->effects['download'] ?? null;
+        $path = tempnam(sys_get_temp_dir(), 'exp').'.xlsx';
+        file_put_contents($path, base64_decode($export['content']));
+
+        Livewire::test(OnlineStoreRoutines::class)
+            ->set('excelFile', UploadedFile::fake()->createWithContent('prices.xlsx', file_get_contents($path)))
+            ->call('importPrices')
+            ->assertSet('importErrors', [])
+            ->assertNotified('قیمت‌ها بروزرسانی شد');
+    }
+
+    private function fa(int $number): string
+    {
+        return strtr((string) $number, ['0' => '۰', '1' => '۱', '2' => '۲', '3' => '۳', '4' => '۴', '5' => '۵', '6' => '۶', '7' => '۷', '8' => '۸', '9' => '۹']);
+    }
+
     public function test_formula_prices_count_by_the_number_excel_computed(): void
     {
         $this->actingAs($this->admin());
