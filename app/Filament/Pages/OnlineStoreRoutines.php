@@ -9,7 +9,6 @@ use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Livewire\WithFileUploads;
@@ -125,7 +124,7 @@ class OnlineStoreRoutines extends Page
             return;
         }
 
-        [$prices, $skippedRows, $errors, $bundleRows] = $this->parsePrices($rows);
+        [$prices, $skippedRows, $errors, $bundleRows, $nameRows] = $this->parsePrices($rows);
 
         if ($errors !== []) {
             $this->rejectImport($errors);
@@ -182,6 +181,11 @@ class OnlineStoreRoutines extends Page
                 .PersianHelper::toPersianDigits(implode('، ', $skippedRows)).').';
         }
 
+        if ($nameRows !== []) {
+            $body .= ' '.PersianHelper::toPersianDigits(count($nameRows)).' سطر با نام کالا پیدا شد، چون کد یونیک آن در فایل با سبد یکی نبود (سطر '
+                .PersianHelper::toPersianDigits(implode('، ', $nameRows)).').';
+        }
+
         if ($bundleRows !== []) {
             $body .= ' '.PersianHelper::toPersianDigits(count($bundleRows)).' سطر مربوط به سبد اختصاصی بود و نادیده گرفته شد؛ قیمت سبدها از کالاهایشان حساب می شود (سطر '
                 .PersianHelper::toPersianDigits(implode('، ', $bundleRows)).').';
@@ -191,7 +195,7 @@ class OnlineStoreRoutines extends Page
             ->title('قیمت‌ها بروزرسانی شد')
             ->body($body)
             ->success()
-            ->persistent($skippedRows !== [] || $bundleRows !== [])
+            ->persistent($skippedRows !== [] || $bundleRows !== [] || $nameRows !== [])
             ->send();
     }
 
@@ -226,20 +230,22 @@ class OnlineStoreRoutines extends Page
 
     /**
      * @param  array<int, array<int, mixed>>  $rows
-     * @return array{0: array<int, int>, 1: list<int>, 2: list<string>, 3: list<int>} [قیمت‌ها به تفکیک شناسه کالا، سطرهای کالای حذف‌شده، خطاها، سطرهای سبد اختصاصی]
+     * @return array{0: array<int, int>, 1: list<int>, 2: list<string>, 3: list<int>, 4: list<int>} [قیمت‌ها به تفکیک شناسه کالا، سطرهای کالای حذف‌شده، خطاها، سطرهای سبد اختصاصی، سطرهایی که با نام کالا پیدا شدند]
      */
     private function parsePrices(array $rows): array
     {
         $productIds = Product::singles()->pluck('id')->flip();
         $bundleIds = Product::bundles()->pluck('id')->flip();
-        // a row's name must be its id's: a file numbered by hand (or copied from an older one) puts
-        // the prices on the wrong products the moment one id is off
+        // a row goes to the product its name says (names are unique): a file numbered by hand (or
+        // copied from an older one) is one id off after a deleted product, and the id alone would
+        // put each price on the next product
         $names = Product::query()->pluck('name', 'id');
         $idsByName = $names->mapWithKeys(fn (string $name, int $id) => [self::comparableName($name) => $id]);
         $prices = [];
         $skippedRows = [];
         $errors = [];
         $bundleRows = [];
+        $nameRows = [];
 
         foreach ($rows as $number => $cells) {
             $rawId = $cells[0] ?? null;
@@ -256,7 +262,21 @@ class OnlineStoreRoutines extends Page
             $label = 'سطر '.PersianHelper::toPersianDigits($number).': ';
             $rawName = $cells[2] ?? null;
             $name = is_string($rawName) || is_numeric($rawName) ? trim((string) $rawName) : '';
-            $mismatch = $id !== null && $name !== '' ? $this->nameMismatch($id, $name, $names, $idsByName) : null;
+            $mismatch = null;
+            $byName = false;
+
+            if ($id !== null && $name !== '' && ! ($names->has($id) && self::comparableName($names[$id]) === self::comparableName($name))) {
+                $owner = $idsByName[self::comparableName($name)] ?? null;
+
+                if ($owner !== null) {
+                    // the name is a product's, under another id: that product is the one meant
+                    $id = $owner;
+                    $byName = true;
+                } elseif ($names->has($id)) {
+                    $mismatch = 'کد یونیک '.PersianHelper::toPersianDigits((string) $id).' در سبد مال «'.$names[$id].'» است، ولی کالایی با نام «'.$name.'» در سبد نیست؛ نام یا کد این سطر را اصلاح کنید.';
+                }
+                // an id no longer in sabad with a name not in it either: a deleted product, skipped below
+            }
 
             if ($id === null) {
                 $errors[] = $label.'کد یونیک محصول در ستون اول باید عدد باشد.';
@@ -279,6 +299,9 @@ class OnlineStoreRoutines extends Page
                 $errors[] = $label.'این کالا در فایل تکراری است.';
             } else {
                 $prices[$id] = $price;
+                if ($byName) {
+                    $nameRows[] = $number;
+                }
             }
 
             if (count($errors) >= self::MAX_REPORTED_ERRORS) {
@@ -287,7 +310,7 @@ class OnlineStoreRoutines extends Page
             }
         }
 
-        return [$prices, $skippedRows, $errors, $bundleRows];
+        return [$prices, $skippedRows, $errors, $bundleRows, $nameRows];
     }
 
     /**
@@ -310,33 +333,6 @@ class OnlineStoreRoutines extends Page
         $value = str_replace([',', '٬', '،', ' '], '', PersianHelper::toEnglishDigits(trim($value)));
 
         return ctype_digit($value) ? (int) $value : null;
-    }
-
-    /**
-     * Why a row's id and name do not go together, or null when they do (or the id is of a product
-     * deleted for good, whose row is skipped as before).
-     *
-     * @param  Collection<int, string>  $names  every product's name by id
-     * @param  Collection<string, int>  $idsByName  every id by comparable name
-     */
-    private function nameMismatch(int $id, string $name, $names, $idsByName): ?string
-    {
-        $owner = $idsByName[self::comparableName($name)] ?? null;
-
-        if ($names->has($id)) {
-            if (self::comparableName($names[$id]) === self::comparableName($name)) {
-                return null;
-            }
-
-            return 'کد یونیک '.PersianHelper::toPersianDigits((string) $id).' در سبد مال «'.$names[$id].'» است، ولی نام این سطر «'.$name.'» است'
-                .($owner !== null ? '؛ کد یونیک «'.$name.'» در سبد '.PersianHelper::toPersianDigits((string) $owner).' است' : '')
-                .'. فایل را دوباره از همین صفحه دانلود کنید و قیمت ها را در آن وارد کنید.';
-        }
-
-        return $owner !== null
-            ? 'کالای «'.$name.'» در سبد کد یونیک '.PersianHelper::toPersianDigits((string) $owner).' دارد، نه '.PersianHelper::toPersianDigits((string) $id)
-                .'. فایل را دوباره از همین صفحه دانلود کنید و قیمت ها را در آن وارد کنید.'
-            : null;
     }
 
     /** A name as typed anywhere: Arabic or Persian ی and ک, half or double spaces, either digits. */

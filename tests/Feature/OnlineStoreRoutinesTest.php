@@ -270,36 +270,79 @@ class OnlineStoreRoutinesTest extends TestCase
         return UploadedFile::fake()->createWithContent('prices.xlsx', file_get_contents($path));
     }
 
-    public function test_a_file_numbered_one_off_after_a_deleted_product_changes_nothing_and_says_which_id_is_whose(): void
+    public function test_a_file_numbered_one_off_after_a_deleted_product_prices_each_product_by_its_name(): void
     {
         // as on the server: a product deleted in the middle, so the ids after it are one ahead of
         // a list numbered 1, 2, 3 by hand
         $this->actingAs($this->admin());
         $gone = $this->product('روغن قدیمی حذف شده', 10000);
-        $palm = $this->product('روغن مایع سرخ کردنی بدون پالم 810 گرم فامیلا', 433500);
-        $oil = $this->product('روغن مایع سرخ کردنی 1620 گرم فامیلا', 864300);
-        $pasta = $this->product('ماکارانی رشته ای 700 گرمی زر ماکارون سایز 1.2', 92800);
+        $nature = $this->product('روغن مایع پخت و پز 810 گرم طبیعت', 1000);
+        $palm = $this->product('روغن مایع سرخ کردنی بدون پالم 810 گرم فامیلا', 1000);
+        $oil = $this->product('روغن مایع سرخ کردنی 1620 گرم فامیلا', 1000);
+        $pasta = $this->product('ماکارانی رشته ایی 700 گرمی زر ماکارون سایز 1.2', 1000);
         $goneId = $gone->id;
         $gone->delete();
 
         Livewire::test(OnlineStoreRoutines::class)
             ->set('excelFile', $this->excel([
-                [$goneId, $goneId, 'روغن مایع سرخ کردنی بدون پالم 810 گرم فامیلا', 4335000],
+                [$goneId, $goneId, 'روغن مایع پخت و پز 810 گرم طبیعت', 4020000],
+                [$nature->id, $nature->id, 'روغن مایع سرخ کردنی بدون پالم 810 گرم فامیلا', 4335000],
                 [$palm->id, $palm->id, 'روغن مایع سرخ کردنی 1620 گرم فامیلا', 8643000],
-                [$oil->id, $oil->id, 'ماکارانی رشته ای 700 گرمی زر ماکارون سایز 1.2', 928000],
+                [$oil->id, $oil->id, 'ماکارانی رشته ایی 700 گرمی زر ماکارون سایز 1.2', 928000],
             ]))
             ->call('importPrices')
-            ->assertSet('importErrors', [
-                'سطر ۲: کالای «روغن مایع سرخ کردنی بدون پالم 810 گرم فامیلا» در سبد کد یونیک '.$this->fa($palm->id).' دارد، نه '.$this->fa($goneId).'. فایل را دوباره از همین صفحه دانلود کنید و قیمت ها را در آن وارد کنید.',
-                'سطر ۳: کد یونیک '.$this->fa($palm->id).' در سبد مال «روغن مایع سرخ کردنی بدون پالم 810 گرم فامیلا» است، ولی نام این سطر «روغن مایع سرخ کردنی 1620 گرم فامیلا» است؛ کد یونیک «روغن مایع سرخ کردنی 1620 گرم فامیلا» در سبد '.$this->fa($oil->id).' است. فایل را دوباره از همین صفحه دانلود کنید و قیمت ها را در آن وارد کنید.',
-                'سطر ۴: کد یونیک '.$this->fa($oil->id).' در سبد مال «روغن مایع سرخ کردنی 1620 گرم فامیلا» است، ولی نام این سطر «ماکارانی رشته ای 700 گرمی زر ماکارون سایز 1.2» است؛ کد یونیک «ماکارانی رشته ای 700 گرمی زر ماکارون سایز 1.2» در سبد '.$this->fa($pasta->id).' است. فایل را دوباره از همین صفحه دانلود کنید و قیمت ها را در آن وارد کنید.',
-            ])
-            ->assertNotified('هیچ قیمتی تغییر نکرد');
+            ->assertSet('importErrors', [])
+            ->assertNotified(
+                Notification::make()
+                    ->title('قیمت‌ها بروزرسانی شد')
+                    ->body('قیمت ۴ کالا تغییر کرد و ۰ کالا بدون تغییر ماند. ۴ سطر با نام کالا پیدا شد، چون کد یونیک آن در فایل با سبد یکی نبود (سطر ۲، ۳، ۴، ۵).')
+                    ->success()
+                    ->persistent()
+            );
 
-        // the macaroni's price never lands on the oil
+        // each price on the product the row names: the macaroni's on the macaroni, not on the oil
+        $this->assertSame(402000, (int) $nature->fresh()->price);
         $this->assertSame(433500, (int) $palm->fresh()->price);
         $this->assertSame(864300, (int) $oil->fresh()->price);
         $this->assertSame(92800, (int) $pasta->fresh()->price);
+    }
+
+    public function test_an_id_with_a_name_sabad_does_not_have_changes_nothing(): void
+    {
+        $this->actingAs($this->admin());
+        $rice = $this->product('برنج هاشمی', 150000);
+        $beans = $this->product('لوبیا قرمز', 90000);
+
+        Livewire::test(OnlineStoreRoutines::class)
+            ->set('excelFile', $this->excel([
+                [$rice->id, 'ندارد', 'برنج هاشمی', 1750000],
+                [$beans->id, 'ندارد', 'نخود', 950000],
+            ]))
+            ->call('importPrices')
+            ->assertSet('importErrors', [
+                'سطر ۳: کد یونیک '.$this->fa($beans->id).' در سبد مال «لوبیا قرمز» است، ولی کالایی با نام «نخود» در سبد نیست؛ نام یا کد این سطر را اصلاح کنید.',
+            ])
+            ->assertNotified('هیچ قیمتی تغییر نکرد');
+
+        $this->assertSame(150000, (int) $rice->fresh()->price);
+        $this->assertSame(90000, (int) $beans->fresh()->price);
+    }
+
+    public function test_two_rows_naming_the_same_product_are_a_duplicate(): void
+    {
+        $this->actingAs($this->admin());
+        $rice = $this->product('برنج هاشمی', 150000);
+        $beans = $this->product('لوبیا قرمز', 90000);
+
+        Livewire::test(OnlineStoreRoutines::class)
+            ->set('excelFile', $this->excel([
+                [$rice->id, 'ندارد', 'برنج هاشمی', 1750000],
+                [$beans->id, 'ندارد', 'برنج هاشمی', 1800000],
+            ]))
+            ->call('importPrices')
+            ->assertSet('importErrors', ['سطر ۳: این کالا در فایل تکراری است.']);
+
+        $this->assertSame(150000, (int) $rice->fresh()->price);
     }
 
     public function test_names_typed_a_little_differently_still_match(): void
@@ -326,7 +369,7 @@ class OnlineStoreRoutinesTest extends TestCase
         $this->assertSame(80000, (int) $rice->fresh()->price);
     }
 
-    public function test_an_id_of_a_bundle_with_a_products_name_is_a_mismatch_too(): void
+    public function test_a_bundles_id_with_a_products_name_prices_that_product(): void
     {
         $this->actingAs($this->admin());
         $rice = $this->product('برنج هاشمی', 150000);
@@ -335,11 +378,9 @@ class OnlineStoreRoutinesTest extends TestCase
         Livewire::test(OnlineStoreRoutines::class)
             ->set('excelFile', $this->excel([[$bundle->id, 'ندارد', 'برنج هاشمی', 1750000]]))
             ->call('importPrices')
-            ->assertSet('importErrors', [
-                'سطر ۲: کد یونیک '.$this->fa($bundle->id).' در سبد مال «سبد اقتصادی» است، ولی نام این سطر «برنج هاشمی» است؛ کد یونیک «برنج هاشمی» در سبد '.$this->fa($rice->id).' است. فایل را دوباره از همین صفحه دانلود کنید و قیمت ها را در آن وارد کنید.',
-            ]);
+            ->assertSet('importErrors', []);
 
-        $this->assertSame(150000, (int) $rice->fresh()->price);
+        $this->assertSame(175000, (int) $rice->fresh()->price);
     }
 
     public function test_the_exported_file_imports_back_without_a_single_mismatch(): void
