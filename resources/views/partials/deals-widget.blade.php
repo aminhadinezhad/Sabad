@@ -120,6 +120,9 @@
         margin-top: calc(-5.05% - 1px);
         padding: calc(5.05% + 10px) 0 12px;
         border-radius: 0 0 22px 22px;
+        /* the cards, cut at the sides, end inside the rounded bottom corners: keep them (and their
+           shadow) within the curve, as the square top keeps them within the box */
+        overflow: hidden;
         background: linear-gradient(
             180deg,
             rgb(182, 82, 4) 0,
