@@ -17,13 +17,17 @@ class OrderController extends Controller
         $validated = $this->validateOrderRequest($request);
 
         // ۲. پیدا کردن یا ساختن مشتری بر اساس شماره تلفن
-        $customer = Customer::updateOrCreate(
-            ['phone' => $validated['phone']],
-            [
-                'full_name' => $validated['full_name'],
-                'address' => $validated['address'] ?? null,
-            ]
-        );
+        // A customer deleted in the panel keeps its row, and the phone is unique: look among the
+        // deleted too and bring that one back, or the insert of a second row fails.
+        $customer = Customer::withTrashed()->firstOrNew(['phone' => $validated['phone']]);
+        $customer->fill([
+            'full_name' => $validated['full_name'],
+            'address' => $validated['address'] ?? null,
+        ]);
+        if ($customer->trashed()) {
+            $customer->deleted_at = null;
+        }
+        $customer->save();
 
         // ۳. محاسبه‌ی جمع کل قیمت (شامل مالیات و ارزش‌افزوده)
         $totalPrice = collect($validated['items'])->sum(function ($item) {
