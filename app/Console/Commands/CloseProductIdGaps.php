@@ -9,9 +9,9 @@ use RuntimeException;
 
 /**
  * Closes the gaps a deleted product leaves in the products' ids, so they run 1, 2, 3 … like a
- * price list numbered by hand. Each product after a gap moves down into it, taking everything
- * with it (name, price, code, picture); the bundles' lines follow their products. Bundles keep
- * their own ids. Orders and carts name their products and never point at an id, so they are
+ * price list numbered by hand. Each product (or bundle) after a gap moves down into it, taking
+ * everything with it (name, price, code, picture); the bundles' lines follow both the bundle and
+ * the products in it. Orders and carts name their products and never point at an id, so they are
  * untouched.
  *
  * Without --apply it only says what it would do.
@@ -73,22 +73,16 @@ class CloseProductIdGaps extends Command
     }
 
     /**
-     * Each product sold on its own, in id order, takes the lowest id not held by an earlier one
-     * or by a bundle.
+     * Every product, bundles too, in id order, takes the next id: 1, 2, 3 … with no gap.
      *
      * @return list<array{from: int, to: int, name: string}>
      */
     private function plan(): array
     {
-        $bundleIds = Product::bundles()->pluck('id')->flip();
         $moves = [];
         $next = 1;
 
-        foreach (Product::singles()->orderBy('id')->get(['id', 'name']) as $product) {
-            while ($bundleIds->has($next)) {
-                $next++;
-            }
-
+        foreach (Product::query()->orderBy('id')->get(['id', 'name']) as $product) {
             if ($product->id !== $next) {
                 $moves[] = ['from' => $product->id, 'to' => $next, 'name' => $product->name];
             }
