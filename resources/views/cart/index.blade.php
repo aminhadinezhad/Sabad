@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>سبد خرید</title>
+    @include('partials.clarity')
     <meta name="theme-color" content="#164194">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
@@ -719,7 +720,8 @@
         </div>
 
         <div class="order-modal__body">
-            <form id="order-form" action="{{ route('orders.store') }}" method="POST">
+            {{-- data-clarity-mask: Clarity records nothing typed or shown in here --}}
+            <form id="order-form" action="{{ route('orders.store') }}" method="POST" data-clarity-mask="True">
                 @csrf
 
                 <div class="order-field">
